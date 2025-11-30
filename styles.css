@@ -6,8 +6,8 @@
   --gold: #d4af37;
   --gold-light: #f4cf57;
   --card-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-  --card-width: 100px;
-  --card-height: 140px;
+  --card-width: 125px;
+  --card-height: 175px;
   --stack-gap: 8px;
   --font-display: "Georgia", serif;
   --font-body: "Segoe UI", "Helvetica Neue", sans-serif;
@@ -126,7 +126,7 @@ body {
   align-items: center;
   margin-bottom: 20px;
   position: relative;
-  height: 180px;
+  height: 225px; /* Increased to accommodate larger cards (210px + margin) */
 }
 
 .game-logo .logo-card {
@@ -285,8 +285,6 @@ body {
 #game-screen:not(.hidden) {
   display: flex;
 }
-
-/* Game Header - removed, players are now at top */
 
 .header-center {
   display: flex;
@@ -619,8 +617,9 @@ body {
 /* Players Header */
 .players-header {
   background: rgba(0, 0, 0, 0.4);
-  padding: 12px 20px;
+  padding: 16px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  min-height: 220px; /* Increased to accommodate larger deck (175px + padding) */
 }
 
 .players-list {
@@ -634,11 +633,14 @@ body {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
   padding: 12px;
+  padding-right: 137px; /* Reserve space for deck (125px + 12px gap) */
   border: 2px solid transparent;
   transition: all 0.2s ease;
   min-width: 200px;
   flex: 1;
   max-width: 280px;
+  min-height: 200px; /* Ensure enough height for deck + stats */
+  position: relative;
 }
 
 .player-entry.current-player {
@@ -648,10 +650,11 @@ body {
 
 .player-header-row {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: flex-start; /* Align to top to prevent overlap */
+  justify-content: flex-start; /* Start from left */
   gap: 12px;
   margin-bottom: 8px;
+  position: relative;
 }
 
 .player-name-section {
@@ -659,6 +662,7 @@ body {
   align-items: center;
   gap: 8px;
   flex: 1;
+  min-width: 0; /* Allow text to shrink if needed */
 }
 
 .trophy {
@@ -677,11 +681,16 @@ body {
 }
 
 .player-deck-wrapper {
-  width: 90px;
-  height: 120px;
+  width: 125px; /* Match new card width */
+  height: 190px; /* Increased to accommodate larger deck (175px card + padding) */
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease;
+  flex-shrink: 0; /* Prevent deck from shrinking */
+  position: absolute;
+  top: 0;
+  right: 0;
+  order: 2;
 }
 
 .player-deck-wrapper.active {
@@ -722,6 +731,7 @@ body {
   gap: 4px;
   font-size: 0.875rem;
   color: rgba(255, 255, 255, 0.7);
+  width: 80%;
 }
 
 .stat-main {
@@ -729,6 +739,11 @@ body {
   justify-content: space-between;
   font-size: 0.95rem;
   font-weight: 600;
+}
+
+.stat-main > span:last-child {
+  max-width: 50%;
+  text-align: right;
 }
 
 .stat-tiebreakers {
@@ -743,6 +758,11 @@ body {
   justify-content: space-between;
   font-size: 0.75rem;
   opacity: 0.6;
+}
+
+.stat-tiebreaker > span:last-child {
+  max-width: 50%;
+  text-align: right;
 }
 
 /* Announcement Overlay */
@@ -957,8 +977,8 @@ body {
   }
 
   :root {
-    --card-width: 75px; /* 25% increase from 60 */
-    --card-height: 105px; /* 25% increase from 84 */
+    --card-width: 94px;
+    --card-height: 131px;
   }
 
   .stack {

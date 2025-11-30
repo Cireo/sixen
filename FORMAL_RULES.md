@@ -197,12 +197,14 @@ Stacks are not capped at the number of Players.
 
 # 8. Game End
 
-The game ends under the following condition:
+The game ends under any of the following conditions:
 
-- A Player, on their turn, draws a Number Card but has **no legal play** on any Stack **and** no Face Cards remain.
-- That Player keeps the card unplayed.
-- Play continues.
-- **When the turn returns to that same Player, the game ends immediately.**
+1. **Number Deck Exhausted**: If the Number Deck runs out (no cards remain to draw), the game ends immediately.
+
+2. **Stuck Player Returns**: A Player, on their turn, draws a Number Card but has **no legal play** on any Stack **and** no Face Cards remain.
+   - That Player keeps the card unplayed.
+   - Play continues.
+   - **When the turn returns to that same Player, the game ends immediately.**
 
 ---
 

@@ -298,7 +298,7 @@ function checkCollectionConditions(stack, playedCard, side) {
 
   // Match: Stack was full and card matched the sum
   if (side === "match") {
-    conditions.push({ type: "match", announcement: `${cardValue} Same!` });
+    conditions.push({ type: "match", announcement: `${cardValue} Ditto!` });
   }
 
   return conditions;
@@ -313,6 +313,7 @@ function createPlayer(id, name) {
     name,
     collected: [], // Array of collected stacks (each stack has face + cards)
     sixSevenCount: 0, // Number of Six-Seven collections
+    stuckCard: null, // Card kept when player gets stuck
   };
 }
 
@@ -438,7 +439,14 @@ class SixSevenGame {
     const newStack = playCard(stack, playedCard, side);
     this.stacks[stackIndex] = newStack;
     this.drawnCard = null;
-    this.stuckPlayer = null; // Player made a valid play
+    // Only reset stuckPlayer if the current player (who made the play) was the stuck player
+    // This allows the game to continue if someone else makes a play, but ends when turn returns to stuck player
+    if (this.stuckPlayer === this.currentPlayerIndex) {
+      this.stuckPlayer = null; // Stuck player made a valid play, game continues
+      // Clear the stuck card since they played
+      const player = this.getCurrentPlayer();
+      player.stuckCard = null;
+    }
 
     // Check collection conditions
     const conditions = checkCollectionConditions(newStack, playedCard, side);
@@ -512,10 +520,15 @@ class SixSevenGame {
       } else if (this.stuckPlayer === null) {
         // First player to get stuck
         this.stuckPlayer = this.currentPlayerIndex;
-        // Keep the card (it stays in drawnCard but won't be played)
+        // Store the card in the player's stuckCard field
+        const player = this.getCurrentPlayer();
+        player.stuckCard = this.drawnCard;
         return { createNewStack: false, gameEnding: true, gameOver: false };
       } else {
         // Another player got stuck, not the original one
+        // Store the card in this player's stuckCard field
+        const player = this.getCurrentPlayer();
+        player.stuckCard = this.drawnCard;
         return { createNewStack: false, gameEnding: true, gameOver: false };
       }
     }
@@ -528,6 +541,8 @@ class SixSevenGame {
     this.lastPlayedIndex = this.currentPlayerIndex;
     this.currentPlayerIndex =
       (this.currentPlayerIndex + 1) % this.players.length;
+    // Clear drawnCard (current player's card)
+    // Stuck players' cards are stored in player.stuckCard and persist
     this.drawnCard = null;
   }
 

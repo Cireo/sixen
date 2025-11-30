@@ -101,9 +101,10 @@ After playing a Number card, you may immediately **Collect** that Stack (take th
 
 The game ends when:
 
-- A player draws a Number card that cannot legally be played on any Stack,
-- The Face Deck is empty, **and**
-- Play returns to that same player (they are still holding the unplayed card).
+1. **The Number Deck runs out** (no more cards to draw), **or**
+2. A player draws a Number card that cannot legally be played on any Stack,
+   - The Face Deck is empty, **and**
+   - Play returns to that same player (they are still holding the unplayed card).
 
 ### Scoring
 

@@ -83,11 +83,20 @@ function getCardId(card) {
  * Initialize event listeners
  */
 function initEventListeners() {
+  // Only initialize if we're on the main game page (elements exist)
+  if (!addPlayerBtn || !removePlayerBtn || !startGameBtn) {
+    return; // Skip initialization on tutorial page
+  }
+
   addPlayerBtn.addEventListener("click", addPlayer);
   removePlayerBtn.addEventListener("click", removePlayer);
   startGameBtn.addEventListener("click", startGame);
-  menuBtn.addEventListener("click", returnToMenu);
-  playAgainBtn.addEventListener("click", returnToMenu);
+  if (menuBtn) {
+    menuBtn.addEventListener("click", returnToMenu);
+  }
+  if (playAgainBtn) {
+    playAgainBtn.addEventListener("click", returnToMenu);
+  }
   if (showHighScoresBtn) {
     showHighScoresBtn.addEventListener("click", showHighScores);
   }
@@ -1575,6 +1584,16 @@ const SCENARIOS = {
     drawnCard: { rank: "9", suit: "diamonds" },
     stuckPlayer: 0,
   },
+};
+
+// Export rendering functions for tutorial use
+window.TutorialRendering = {
+  createCardElement,
+  createCardBackElement,
+  createDeckStack,
+  getCardId,
+  SUIT_NAMES,
+  PLAYER_COLORS,
 };
 
 // Initialize on load

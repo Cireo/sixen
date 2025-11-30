@@ -1,0 +1,425 @@
+{
+  "sections": [
+    {
+      "id": "introduction",
+      "title": "Introduction",
+      "content": "# Introduction to Sixen\n\nSixen is a fast, tactical card game where players play numbered cards onto face-card **Stacks** to create collectable sums. This tutorial will guide you through the rules and strategies.\n\n## What You'll Learn\n\n- How to set up and play the game\n- Understanding stack structure and capacity\n- Turn rules and legal plays\n- Collection conditions\n- End game conditions and scoring\n- Strategy tips"
+    },
+    {
+      "id": "setup",
+      "title": "Setup & Components",
+      "content": "## Setup & Components\n\n### Components\n\n- Standard 52-card deck (no Jokers)\n- Split into two face-down decks:\n  - **Face Deck**: J, Q, K (only used to create Stacks)\n  - **Number Deck**: A (1) through 10 (numeric values)\n\n> **Important:** Face cards (J/Q/K) have **no numeric value**. They only determine the per-side capacity of a Stack.\n\n### Setup Steps\n\n1. Shuffle Face Deck and Number Deck separately.\n2. Reveal one Face card per player to create the initial Stacks (place face-up in the play area).\n3. Youngest player goes first; play proceeds clockwise.",
+      "examples": [
+        {
+          "id": "setup-example",
+          "title": "Initial Setup (2 Players)",
+          "description": "A game starts with 2 players. One face card is revealed per player to create the initial stacks.",
+          "scenario": {
+            "players": ["Player 1", "Player 2"],
+            "stacks": [
+              {
+                "face": { "rank": "K", "suit": "hearts" },
+                "left": [],
+                "right": [],
+                "matchSlot": null
+              },
+              {
+                "face": { "rank": "Q", "suit": "spades" },
+                "left": [],
+                "right": [],
+                "matchSlot": null
+              }
+            ],
+            "numberDeck": [
+              { "rank": "A", "suit": "clubs" },
+              { "rank": "2", "suit": "diamonds" },
+              { "rank": "3", "suit": "hearts" }
+            ],
+            "faceDeck": [
+              { "rank": "J", "suit": "clubs" },
+              { "rank": "K", "suit": "diamonds" }
+            ],
+            "currentPlayerIndex": 0,
+            "drawnCard": null,
+            "stuckPlayer": null
+          },
+          "allowedMoves": [],
+          "autoPlay": false,
+          "autoPlaySteps": []
+        }
+      ]
+    },
+    {
+      "id": "stack-structure",
+      "title": "Stack Structure & Capacity",
+      "content": "## Stack Structure & Capacity\n\nEach **Stack** has:\n\n- **Face** — J, Q, or K (defines capacity)\n- **Plus** pile — cards played to the \"left\" (positive modifiers)\n- **Minus** pile — cards played to the \"right\" (negative modifiers)\n- **Stack Sum** = sum(plus cards) − sum(minus cards)\n\n### Capacities (per side):\n\n- **Jack (J)**: 1 plus, 1 minus\n- **Queen (Q)**: 2 plus, 2 minus\n- **King (K)**: 3 plus, 3 minus\n\nA Stack is **Full** when both plus and minus piles have reached their capacity.",
+      "examples": [
+        {
+          "id": "stack-capacity-example",
+          "title": "Stack Capacities",
+          "description": "Different face cards allow different numbers of cards on each side.",
+          "scenario": {
+            "players": ["Player 1"],
+            "stacks": [
+              {
+                "face": { "rank": "J", "suit": "hearts" },
+                "left": [{ "rank": "5", "suit": "diamonds" }],
+                "right": [],
+                "matchSlot": null
+              },
+              {
+                "face": { "rank": "Q", "suit": "spades" },
+                "left": [{ "rank": "3", "suit": "hearts" }, { "rank": "2", "suit": "clubs" }],
+                "right": [{ "rank": "1", "suit": "diamonds" }],
+                "matchSlot": null
+              },
+              {
+                "face": { "rank": "K", "suit": "diamonds" },
+                "left": [{ "rank": "4", "suit": "hearts" }, { "rank": "2", "suit": "spades" }, { "rank": "1", "suit": "clubs" }],
+                "right": [{ "rank": "3", "suit": "diamonds" }, { "rank": "2", "suit": "hearts" }],
+                "matchSlot": null
+              }
+            ],
+            "numberDeck": [{ "rank": "A", "suit": "clubs" }],
+            "faceDeck": [],
+            "currentPlayerIndex": 0,
+            "drawnCard": null,
+            "stuckPlayer": null
+          },
+          "allowedMoves": [],
+          "autoPlay": false,
+          "autoPlaySteps": []
+        }
+      ]
+    },
+    {
+      "id": "turn-rules",
+      "title": "Turn Rules & Legal Plays",
+      "content": "## Turn Rules & Legal Plays\n\nOn your turn:\n\n1. Flip the top Number card.\n2. You **must** attempt to play it immediately. A play is one of:\n   - Play the card onto the plus side (adds to the Stack Sum)\n   - Play the card onto the minus side (subtracts from the Stack Sum)\n   - Play the card as a **Match** (only on a **Full** Stack where the card value equals the current Stack Sum)\n3. A play is **playable** if:\n   - The chosen side has room (unless doing a **Match**), and\n   - You may not reduce the Stack Sum below zero.\n\nIf the card is NOT playable on any existing Stack:\n\n- If the Face Deck still has cards → reveal the next Face card as a **new Stack**, and play the Number card onto that new Stack.\n- If the Face Deck is empty → you keep the Number card (unplayed). Play continues for a final round; when the turn returns to **you**, the game ends.",
+      "examples": [
+        {
+          "id": "legal-play-example",
+          "title": "Legal Play Example",
+          "description": "Player draws a 2. They can play it on the left side of the King stack (sum becomes 6) or on the right side (sum becomes 2).",
+          "scenario": {
+            "players": ["Player 1"],
+            "stacks": [
+              {
+                "face": { "rank": "K", "suit": "hearts" },
+                "left": [{ "rank": "4", "suit": "diamonds" }],
+                "right": [],
+                "matchSlot": null
+              }
+            ],
+            "numberDeck": [{ "rank": "A", "suit": "clubs" }],
+            "faceDeck": [],
+            "currentPlayerIndex": 0,
+            "drawnCard": { "rank": "2", "suit": "spades" },
+            "stuckPlayer": null
+          },
+          "allowedMoves": [
+            { "stackIndex": 0, "side": "left" },
+            { "stackIndex": 0, "side": "right" }
+          ],
+          "autoPlay": false,
+          "autoPlaySteps": []
+        }
+      ]
+    },
+    {
+      "id": "collections",
+      "title": "Collection Conditions",
+      "content": "## Collection Conditions\n\nAfter playing a Number card, you may immediately **Collect** that Stack (take the face + all numeric cards from it) if **any** of these are true:\n\n### Basic Collections\n\n- **Six-Six:** Stack Sum becomes **6** → announce `Six Six`\n- **Seven-Seven:** Stack Sum becomes **7** → announce `Seven Seven`\n\n### Hybrid Collection\n\n- **Six-Seven:** You played a **7** on a Stack where the most recent visible card (the top card) on that side is a **6**, or where the top card on the opposite side is a **6**.\n  - The resulting sum does *not* matter; only that the play was playable.\n  - Announce `Six Seven`.\n\n### Zero Collections\n\n- **Zero:** Stack Sum is **0**, and **at least one side** (plus or minus) is at its capacity.\n  - Announce `Zero`.\n\n### Match Collections\n\n- **Match:** On a **Full** Stack, you may play a card as a **Match** where the card value equals the Stack Sum.\n  - A **Match** does **not** change the Sum.\n  - Announce `Match <Sum>`.\n\n### Notes\n\n- If multiple collection rules are valid, you may choose any one of them.\n- Collecting removes the entire Stack.\n- If the Face Deck still has cards, immediately flip a new Face card to replace it.",
+      "examples": [
+        {
+          "id": "six-six-example",
+          "title": "Six-Six Collection",
+          "description": "Playing a 2 on the left side makes the sum 6, allowing a Six-Six collection.",
+          "scenario": {
+            "players": ["Player 1"],
+            "stacks": [
+              {
+                "face": { "rank": "K", "suit": "hearts" },
+                "left": [{ "rank": "4", "suit": "diamonds" }],
+                "right": [],
+                "matchSlot": null
+              }
+            ],
+            "numberDeck": [{ "rank": "A", "suit": "clubs" }],
+            "faceDeck": [],
+            "currentPlayerIndex": 0,
+            "drawnCard": { "rank": "2", "suit": "spades" },
+            "stuckPlayer": null
+          },
+          "allowedMoves": [{ "stackIndex": 0, "side": "left" }],
+          "autoPlay": true,
+          "autoPlaySteps": [
+            { "stackIndex": 0, "side": "left" }
+          ]
+        },
+        {
+          "id": "seven-seven-example",
+          "title": "Seven-Seven Collection",
+          "description": "Playing a 2 on the left side makes the sum 7, allowing a Seven-Seven collection.",
+          "scenario": {
+            "players": ["Player 1"],
+            "stacks": [
+              {
+                "face": { "rank": "Q", "suit": "spades" },
+                "left": [{ "rank": "5", "suit": "hearts" }],
+                "right": [],
+                "matchSlot": null
+              }
+            ],
+            "numberDeck": [{ "rank": "A", "suit": "clubs" }],
+            "faceDeck": [],
+            "currentPlayerIndex": 0,
+            "drawnCard": { "rank": "2", "suit": "diamonds" },
+            "stuckPlayer": null
+          },
+          "allowedMoves": [{ "stackIndex": 0, "side": "left" }],
+          "autoPlay": true,
+          "autoPlaySteps": [
+            { "stackIndex": 0, "side": "left" }
+          ]
+        },
+        {
+          "id": "six-seven-example",
+          "title": "Six-Seven Collection (Same Side)",
+          "description": "Playing a 7 on a stack where the top card on the same side is a 6 triggers Six-Seven collection.",
+          "scenario": {
+            "players": ["Player 1"],
+            "stacks": [
+              {
+                "face": { "rank": "K", "suit": "diamonds" },
+                "left": [{ "rank": "6", "suit": "hearts" }],
+                "right": [],
+                "matchSlot": null
+              }
+            ],
+            "numberDeck": [{ "rank": "A", "suit": "clubs" }],
+            "faceDeck": [],
+            "currentPlayerIndex": 0,
+            "drawnCard": { "rank": "7", "suit": "spades" },
+            "stuckPlayer": null
+          },
+          "allowedMoves": [{ "stackIndex": 0, "side": "left" }],
+          "autoPlay": true,
+          "autoPlaySteps": [
+            { "stackIndex": 0, "side": "left" }
+          ]
+        },
+        {
+          "id": "six-seven-other-side-example",
+          "title": "Six-Seven Collection (Other Side)",
+          "description": "Playing a 7 on the left side when the top card on the right side is a 6 also triggers Six-Seven collection. The 6 must be the top (most recent) card on that side.",
+          "scenario": {
+            "players": ["Player 1"],
+            "stacks": [
+              {
+                "face": { "rank": "K", "suit": "diamonds" },
+                "left": [],
+                "right": [{ "rank": "6", "suit": "hearts" }],
+                "matchSlot": null
+              }
+            ],
+            "numberDeck": [{ "rank": "A", "suit": "clubs" }],
+            "faceDeck": [],
+            "currentPlayerIndex": 0,
+            "drawnCard": { "rank": "7", "suit": "spades" },
+            "stuckPlayer": null
+          },
+          "allowedMoves": [{ "stackIndex": 0, "side": "left" }],
+          "autoPlay": true,
+          "autoPlaySteps": [
+            { "stackIndex": 0, "side": "left" }
+          ]
+        },
+        {
+          "id": "six-seven-no-collection-underneath-example",
+          "title": "No Six-Seven Collection (Underneath)",
+          "description": "A 6 underneath another card does not trigger Six-Seven. Only the top (most recent) card on each side is checked.",
+          "scenario": {
+            "players": ["Player 1"],
+            "stacks": [
+              {
+                "face": { "rank": "Q", "suit": "diamonds" },
+                "left": [{ "rank": "6", "suit": "hearts" }, { "rank": "3", "suit": "clubs" }],
+                "right": [],
+                "matchSlot": null
+              }
+            ],
+            "numberDeck": [{ "rank": "A", "suit": "clubs" }],
+            "faceDeck": [],
+            "currentPlayerIndex": 0,
+            "drawnCard": { "rank": "7", "suit": "spades" },
+            "stuckPlayer": null
+          },
+          "allowedMoves": [{ "stackIndex": 0, "side": "left" }],
+          "autoPlay": true,
+          "autoPlaySteps": [
+            { "stackIndex": 0, "side": "left" }
+          ]
+        },
+        {
+          "id": "zero-example",
+          "title": "Zero (Nada) Collection",
+          "description": "Playing a 5 on the right side makes the sum 0, and the right side becomes full, allowing a Zero collection.",
+          "scenario": {
+            "players": ["Player 1"],
+            "stacks": [
+              {
+                "face": { "rank": "J", "suit": "clubs" },
+                "left": [{ "rank": "5", "suit": "hearts" }],
+                "right": [],
+                "matchSlot": null
+              }
+            ],
+            "numberDeck": [{ "rank": "A", "suit": "clubs" }],
+            "faceDeck": [],
+            "currentPlayerIndex": 0,
+            "drawnCard": { "rank": "5", "suit": "diamonds" },
+            "stuckPlayer": null
+          },
+          "allowedMoves": [{ "stackIndex": 0, "side": "right" }],
+          "autoPlay": true,
+          "autoPlaySteps": [
+            { "stackIndex": 0, "side": "right" }
+          ]
+        },
+        {
+          "id": "match-example",
+          "title": "Match Collection",
+          "description": "On a full stack with sum 2, playing a 2 in the match slot collects the stack.",
+          "scenario": {
+            "players": ["Player 1"],
+            "stacks": [
+              {
+                "face": { "rank": "J", "suit": "spades" },
+                "left": [{ "rank": "5", "suit": "hearts" }],
+                "right": [{ "rank": "3", "suit": "diamonds" }],
+                "matchSlot": null
+              }
+            ],
+            "numberDeck": [{ "rank": "A", "suit": "clubs" }],
+            "faceDeck": [],
+            "currentPlayerIndex": 0,
+            "drawnCard": { "rank": "2", "suit": "clubs" },
+            "stuckPlayer": null
+          },
+          "allowedMoves": [{ "stackIndex": 0, "side": "match" }],
+          "autoPlay": true,
+          "autoPlaySteps": [
+            { "stackIndex": 0, "side": "match" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "end-game",
+      "title": "End Game Conditions",
+      "content": "## End Game Conditions\n\nThe game ends when:\n\n1. **No Stacks remain** on the board (all have been collected and no Face Cards remain to create new ones), **or**\n2. **The Number Deck runs out** (no more cards to draw), **or**\n3. A player draws a Number card that cannot legally be played on any Stack,\n   - The Face Deck is empty, **and**\n   - Play returns to that same player (they are still holding the unplayed card), **or**\n4. **No possible moves remain**: All remaining Stacks are full (both sides at capacity) with sums greater than 10, and no Face Cards remain. Since the maximum card value is 10, no card can match these stacks.",
+      "examples": [
+        {
+          "id": "no-stacks-example",
+          "title": "No Stacks Remaining",
+          "description": "When all stacks are collected and no face cards remain, the game ends immediately.",
+          "scenario": {
+            "players": ["Player 1"],
+            "stacks": [],
+            "numberDeck": [{ "rank": "A", "suit": "clubs" }],
+            "faceDeck": [],
+            "currentPlayerIndex": 0,
+            "drawnCard": null,
+            "stuckPlayer": null
+          },
+          "allowedMoves": [],
+          "autoPlay": false,
+          "autoPlaySteps": [],
+          "endGameMessage": "Game ends - no stacks remain on the board"
+        },
+        {
+          "id": "no-number-deck-example",
+          "title": "Number Deck Runs Out",
+          "description": "When the number deck is empty and no card is drawn, the game ends.",
+          "scenario": {
+            "players": ["Player 1"],
+            "stacks": [
+              {
+                "face": { "rank": "K", "suit": "hearts" },
+                "left": [{ "rank": "10", "suit": "spades" }],
+                "right": [],
+                "matchSlot": null
+              }
+            ],
+            "numberDeck": [],
+            "faceDeck": [],
+            "currentPlayerIndex": 0,
+            "drawnCard": null,
+            "stuckPlayer": null
+          },
+          "allowedMoves": [],
+          "autoPlay": false,
+          "autoPlaySteps": [],
+          "endGameMessage": "Game ends - number deck is empty"
+        },
+        {
+          "id": "stuck-player-example",
+          "title": "Stuck Player Returns",
+          "description": "A player draws a card they cannot play, keeps it, and when their turn returns, the game ends.",
+          "scenario": {
+            "players": ["Player 1"],
+            "stacks": [
+              {
+                "face": { "rank": "J", "suit": "hearts" },
+                "left": [{ "rank": "10", "suit": "spades" }],
+                "right": [{ "rank": "2", "suit": "clubs" }],
+                "matchSlot": null
+              }
+            ],
+            "numberDeck": [],
+            "faceDeck": [],
+            "currentPlayerIndex": 0,
+            "drawnCard": { "rank": "9", "suit": "diamonds" },
+            "stuckPlayer": 0
+          },
+          "allowedMoves": [],
+          "autoPlay": false,
+          "autoPlaySteps": [],
+          "endGameMessage": "Player cannot play the 9 (stack is full, sum is 8, not 9). Game ends when turn returns to this player."
+        },
+        {
+          "id": "no-possible-moves-example",
+          "title": "No Possible Moves",
+          "description": "All stacks are full with sums > 10, and no face cards remain. No card can be played.",
+          "scenario": {
+            "players": ["Player 1"],
+            "stacks": [
+              {
+                "face": { "rank": "K", "suit": "hearts" },
+                "left": [{ "rank": "10", "suit": "spades" }, { "rank": "5", "suit": "diamonds" }, { "rank": "2", "suit": "clubs" }],
+                "right": [{ "rank": "3", "suit": "hearts" }, { "rank": "2", "suit": "spades" }, { "rank": "1", "suit": "diamonds" }],
+                "matchSlot": null
+              }
+            ],
+            "numberDeck": [{ "rank": "A", "suit": "clubs" }],
+            "faceDeck": [],
+            "currentPlayerIndex": 0,
+            "drawnCard": null,
+            "stuckPlayer": null
+          },
+          "allowedMoves": [],
+          "autoPlay": false,
+          "autoPlaySteps": []
+        }
+      ]
+    },
+    {
+      "id": "scoring",
+      "title": "Scoring",
+      "content": "## Scoring\n\nAt game end, players are ranked by:\n\n1. Most **Face** cards collected wins.\n2. Tie → most **total cards** collected (Face + Number).\n3. Tie → most **Six-Seven** collections.\n4. Tie → whoever took a turn **most recently**.\n5. **(Solitaire)** Tie → oldest score stays (based on timestamp).",
+      "examples": []
+    }
+  ]
+}
+

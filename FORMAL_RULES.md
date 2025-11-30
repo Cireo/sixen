@@ -90,14 +90,15 @@ A Match play:
 
 # 5. Turn Structure
 
-On a Player’s Turn:
+On a Player's Turn:
 
 1. The Player flips the top card of the Number Deck.
 2. The Player must attempt to **Play** the card (see §5.1).
-3. If the card cannot be legally played to modify any existing Stack:
+3. After playing a card, the Player announces the new Stack Sum (e.g., "Two", "Six", "Seven").
+4. If the card cannot be legally played to modify any existing Stack:
    - A new Stack is created if the Face Deck contains cards (see §7).
    - The Number Card is played onto that new Stack as its first modifier.
-4. If no legal plays exist **and** no Face Cards remain, the Player:
+5. If no legal plays exist **and** no Face Cards remain, the Player:
    - Keeps the Number Card in hand (unplayed).
    - Play continues to the next Player.
    - When the turn returns to this same Player, the game ends (§8).
@@ -147,8 +148,11 @@ then the Stack may be collected by announcing:
 Triggered when:
 
 - The played card has value **7**, **and**
-- The Stack’s **visible modifier** (the most recent card on Left or Right) has value **6**, **and**
+- The Stack's **visible modifier** (the most recent card on Left or Right) has value **6**, **and**
+- The **6** must be the top (most recent) card on that side, **and**
 - The play is otherwise legal (capacity and non-negative Sum).
+
+This condition also applies if the **6** is the top card on the **opposite side** from where the **7** is played.
 
 This condition ignores the resulting Sum.
 

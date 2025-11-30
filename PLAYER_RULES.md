@@ -49,17 +49,18 @@ On your turn:
 
 1. Flip the top Number card.
 2. You **must** attempt to play it immediately. A play is one of:
-   - `+X` — play X onto the plus side
-   - `-X` — play X onto the minus side
-   - `mX` — (Match play) only on a **Full** Stack where X equals the current Stack Sum; does **not** change the Sum
-3. A play is **legal** if:
-   - The chosen side has room (unless doing `mX`), and
-   - After the play, **Stack Sum ≥ 0** (it may never go below zero).
+   - Play the card onto the plus side (adds to the Stack Sum)
+   - Play the card onto the minus side (subtracts from the Stack Sum)
+   - Play the card as a **Match** (only on a **Full** Stack where the card value equals the current Stack Sum)
+3. After playing, announce the new Stack Sum (e.g., "Two", "Six", "Seven").
+4. A play is **playable** if:
+   - The chosen side has room (unless doing a **Match**), and
+   - You may not reduce the Stack Sum below zero.
 
-If the card is NOT legal on any existing Stack:
+If the card is NOT playable on any existing Stack:
 
-- If the Face Deck still has cards → reveal the next Face card as a **new Stack**, and **you must play the Number card onto that new Stack**.
-- If the Face Deck is empty → you keep the Number card (unplayed). Play continues; when the turn returns to **you**, the game ends.
+- If the Face Deck still has cards → reveal the next Face card as a **new Stack**, and play the Number card onto that new Stack.
+- If the Face Deck is empty → you keep the Number card (unplayed). Play continues for a final round; when the turn returns to **you**, the game ends.
 
 ---
 
@@ -74,8 +75,8 @@ After playing a Number card, you may immediately **Collect** that Stack (take th
 
 ### Hybrid collection
 
-- **Six-Seven:** You played a **7** on a Stack where the most recent visible card on that side is a **6**.
-  - The resulting sum does _not_ matter; only that the play was legal.
+- **Six-Seven:** You played a **7** on a Stack where the most recent visible card (the top card) on that side is a **6**, or where the top card on the opposite side is a **6**.
+  - The resulting sum does *not* matter; only that the play was playable.
   - Announce `Six Seven`.
 
 ### Zero collections
@@ -85,8 +86,8 @@ After playing a Number card, you may immediately **Collect** that Stack (take th
 
 ### Match collections
 
-- **Match:** On a **Full** Stack, you may play `mX` where X equals the Stack Sum.
-  - `mX` does **not** change the Sum.
+- **Match:** On a **Full** Stack, you may play a card as a **Match** where the card value equals the Stack Sum.
+  - A **Match** does **not** change the Sum.
   - Announce `Match <Sum>`.
 
 ### Notes on collection rules
@@ -114,6 +115,7 @@ The game ends when:
 2. Tie → most **total cards** collected (Face + Number).
 3. Tie → most **Six-Seven** collections.
 4. Tie → whoever took a turn **most recently**.
+5. **(Solitaire)** Tie → oldest score stays (based on timestamp).
 
 ---
 

@@ -1,0 +1,363 @@
+/* Tutorial-specific styles */
+
+.tutorial-layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--felt-dark);
+  color: #f0f0f0;
+}
+
+/* Sidebar */
+.tutorial-sidebar {
+  width: 250px;
+  background: rgba(0, 0, 0, 0.3);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  position: fixed;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.tutorial-sidebar-header {
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tutorial-sidebar-header h1 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--gold);
+  margin: 0;
+}
+
+.tutorial-toc {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toc-item {
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.toc-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.toc-item a {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  font-size: 0.95rem;
+  display: block;
+}
+
+.toc-item a:hover {
+  color: var(--gold);
+}
+
+/* Main Content */
+.tutorial-main {
+  flex: 1;
+  margin-left: 250px;
+  padding: 40px;
+  max-width: 1200px;
+}
+
+.tutorial-content {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+/* Tutorial Sections */
+.tutorial-section {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  padding: 30px;
+  scroll-margin-top: 20px;
+}
+
+.tutorial-section-content {
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.tutorial-section-content h1 {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  color: var(--gold);
+  margin-bottom: 20px;
+}
+
+.tutorial-section-content h2 {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--gold);
+  margin-top: 30px;
+  margin-bottom: 15px;
+}
+
+.tutorial-section-content h3 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--gold-light);
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+.tutorial-section-content p {
+  margin-bottom: 15px;
+}
+
+.tutorial-section-content ul,
+.tutorial-section-content ol {
+  margin-left: 20px;
+  margin-bottom: 15px;
+}
+
+.tutorial-section-content li {
+  margin-bottom: 8px;
+}
+
+.tutorial-section-content blockquote {
+  border-left: 3px solid var(--gold);
+  padding-left: 15px;
+  margin-left: 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-style: italic;
+}
+
+.tutorial-section-content strong {
+  color: var(--gold-light);
+  font-weight: bold;
+}
+
+/* Tutorial Examples */
+.tutorial-example {
+  margin-top: 30px;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tutorial-example h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 1.3rem;
+}
+
+.tutorial-example-description {
+  margin-bottom: 20px;
+  color: rgba(255, 255, 255, 0.7);
+  font-style: italic;
+}
+
+.tutorial-endgame-message {
+  margin: 15px 0;
+  padding: 15px;
+  background: rgba(212, 175, 55, 0.15);
+  border: 2px solid var(--gold);
+  border-radius: 8px;
+  color: var(--gold);
+  font-weight: bold;
+  text-align: center;
+}
+
+/* Game Container */
+.tutorial-game-container {
+  margin-top: 20px;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+  min-height: 300px;
+}
+
+.tutorial-game-board {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.tutorial-game-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.tutorial-reset-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #f0f0f0;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tutorial-reset-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: var(--gold);
+}
+
+.tutorial-player-area {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.tutorial-player-name {
+  font-weight: bold;
+  color: var(--gold);
+  font-size: 1.1rem;
+}
+
+.tutorial-player-stats {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.tutorial-drawn-card-area {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  min-height: 200px;
+  align-items: center;
+}
+
+.tutorial-drawn-card-area.hidden {
+  display: none;
+}
+
+.tutorial-message-area {
+  text-align: center;
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--gold);
+  background: rgba(212, 175, 55, 0.2);
+  border: 2px solid var(--gold);
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.tutorial-message-area.hidden {
+  display: none;
+}
+
+.tutorial-message-area.show {
+  opacity: 1;
+  transform: scale(1);
+  display: block;
+}
+
+.tutorial-message-area.show-sum {
+  opacity: 0.8;
+  transform: scale(0.95);
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.9);
+  display: block;
+}
+
+.tutorial-stacks-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.tutorial-stack {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--stack-gap);
+  min-width: 200px;
+  border: 2px solid transparent;
+}
+
+.tutorial-stack.has-legal-play {
+  border-color: var(--gold);
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 900px) {
+  .tutorial-sidebar {
+    width: 200px;
+  }
+
+  .tutorial-main {
+    margin-left: 200px;
+    padding: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .tutorial-layout {
+    flex-direction: column;
+  }
+
+  .tutorial-sidebar {
+    position: relative;
+    width: 100%;
+    height: auto;
+    max-height: 300px;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .tutorial-main {
+    margin-left: 0;
+    padding: 20px;
+  }
+
+  .tutorial-section {
+    padding: 20px;
+  }
+
+  .tutorial-stacks-container {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .tutorial-sidebar {
+    display: none;
+  }
+
+  .tutorial-main {
+    margin-left: 0;
+    padding: 0;
+  }
+
+  .tutorial-game-controls {
+    display: none;
+  }
+
+  .tutorial-game-container {
+    page-break-inside: avoid;
+  }
+
+  .tutorial-section {
+    page-break-inside: avoid;
+  }
+}
+

@@ -1,125 +1,150 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Six-Seven Card Game</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
     <!-- Setup Screen -->
     <div id="setup-screen" class="screen">
-        <div class="setup-container">
-            <h1 class="game-title">Six-Seven</h1>
-            <p class="game-subtitle">A tactical card collection game</p>
-            
-            <div class="player-setup">
-                <h2>Players</h2>
-                <div id="player-inputs">
-                    <div class="player-input-row">
-                        <label>Player 1:</label>
-                        <input type="text" id="player-1" placeholder="Enter name" value="Player 1">
-                    </div>
-                    <div class="player-input-row">
-                        <label>Player 2:</label>
-                        <input type="text" id="player-2" placeholder="Enter name" value="Player 2">
-                    </div>
-                </div>
-                
-                <div class="player-controls">
-                    <button id="add-player-btn" class="btn btn-secondary">+ Add Player</button>
-                    <button id="remove-player-btn" class="btn btn-secondary" disabled>- Remove Player</button>
-                </div>
-                
-                <div class="game-options">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="auto-play-new-stacks" />
-                        <span>Auto-play on new stacks</span>
-                    </label>
-                </div>
-                
-                <button id="start-game-btn" class="btn btn-primary">Start Game</button>
+      <div class="setup-container">
+        <div class="game-logo" id="game-logo"></div>
+        <h1 class="game-title">Six-Seven</h1>
+        <p class="game-subtitle">A tactical card collection game</p>
+
+        <div class="player-setup">
+          <h2>Players</h2>
+          <div id="player-inputs">
+            <div class="player-input-row">
+              <label>Player 1:</label>
+              <input
+                type="text"
+                id="player-1"
+                placeholder="Enter name"
+                value="Player 1"
+              />
             </div>
-            
-            <div class="rules-summary">
-                <h3>Quick Rules</h3>
-                <ul>
-                    <li>Draw a number card and play it on a stack</li>
-                    <li>Left side adds, right side subtracts from the sum</li>
-                    <li>Collect stacks when sum = 6, 7, or special conditions</li>
-                    <li>Most face cards collected wins!</li>
-                </ul>
+            <div class="player-input-row">
+              <label>Player 2:</label>
+              <input
+                type="text"
+                id="player-2"
+                placeholder="Enter name"
+                value="Player 2"
+              />
             </div>
+          </div>
+
+          <div class="player-controls">
+            <button id="add-player-btn" class="btn btn-secondary">
+              + Add Player
+            </button>
+            <button id="remove-player-btn" class="btn btn-secondary" disabled>
+              - Remove Player
+            </button>
+          </div>
+
+          <div class="game-options">
+            <label class="checkbox-label">
+              <input type="checkbox" id="auto-play-new-stacks" />
+              <span>Auto-play on new stacks</span>
+            </label>
+          </div>
+
+          <button id="start-game-btn" class="btn btn-primary">
+            Start Game
+          </button>
         </div>
+
+        <div class="rules-summary">
+          <h3>Quick Rules</h3>
+          <ul>
+            <li>Draw a number card and play it on a stack</li>
+            <li>Left side adds, right side subtracts from the sum</li>
+            <li>Collect stacks when sum = 6, 7, or special conditions</li>
+            <li>Most face cards collected wins!</li>
+          </ul>
+        </div>
+      </div>
     </div>
 
     <!-- Game Screen -->
     <div id="game-screen" class="screen hidden">
-        <!-- Players at top -->
-        <header class="players-header">
-            <div id="players-list" class="players-list">
-                <!-- Player entries will be dynamically inserted here -->
-            </div>
-        </header>
-        <button id="menu-btn" class="btn btn-small menu-btn-fixed">Menu</button>
+      <!-- Debug mode button (only visible when debug mode is enabled) -->
+      <button
+        id="debug-load-scenario-btn"
+        class="btn btn-small debug-btn hidden"
+      >
+        Load Scenario
+      </button>
+      <!-- Players at top -->
+      <header class="players-header">
+        <div id="players-list" class="players-list">
+          <!-- Player entries will be dynamically inserted here -->
+        </div>
+      </header>
+      <button id="menu-btn" class="btn btn-small menu-btn-fixed">Menu</button>
 
-        <!-- Main game area -->
-        <main class="game-board">
-            <!-- Stacks container -->
-            <div id="stacks-container" class="stacks-container">
-                <!-- Stacks will be dynamically inserted here -->
-            </div>
-            
-            <!-- Face Deck in corner -->
-            <div class="face-deck-corner">
-                <div class="deck-display-wrapper">
-                    <div class="deck-counter">
-                        <span class="deck-label">Face Deck</span>
-                        <span id="face-deck-count">12</span>
-                    </div>
-                    <div id="face-deck-display" class="deck-display"></div>
-                </div>
-            </div>
-        </main>
-
-        <!-- Announcement overlay -->
-        <div id="announcement-overlay" class="announcement-overlay hidden">
-            <div class="announcement-content">
-                <h2 id="announcement-text">Six Six!</h2>
-            </div>
+      <!-- Main game area -->
+      <main class="game-board">
+        <!-- Stacks container -->
+        <div id="stacks-container" class="stacks-container">
+          <!-- Stacks will be dynamically inserted here -->
         </div>
 
-        <!-- Game Over Overlay -->
-        <div id="gameover-overlay" class="gameover-overlay hidden">
-            <div class="gameover-container">
-                <h1>Game Over</h1>
-                <div id="winner-announcement" class="winner-announcement">
-                    <h2 id="winner-name">Player 1 Wins!</h2>
-                </div>
-                <div id="final-scores" class="final-scores">
-                    <!-- Final scores will be dynamically inserted here -->
-                </div>
-                <button id="play-again-btn" class="btn btn-primary">Play Again</button>
+        <!-- Face Deck in corner -->
+        <div class="face-deck-corner">
+          <div class="deck-display-wrapper">
+            <div class="deck-counter">
+              <span class="deck-label">Face Deck</span>
+              <span id="face-deck-count">12</span>
             </div>
+            <div id="face-deck-display" class="deck-display"></div>
+          </div>
         </div>
+      </main>
+
+      <!-- Announcement overlay -->
+      <div id="announcement-overlay" class="announcement-overlay hidden">
+        <div class="announcement-content">
+          <h2 id="announcement-text">Six Six!</h2>
+        </div>
+      </div>
+
+      <!-- Game Over Overlay -->
+      <div id="gameover-overlay" class="gameover-overlay hidden">
+        <div class="gameover-container">
+          <h1>Game Over</h1>
+          <div id="winner-announcement" class="winner-announcement">
+            <h2 id="winner-name">Player 1 Wins!</h2>
+          </div>
+          <div id="final-scores" class="final-scores">
+            <!-- Final scores will be dynamically inserted here -->
+          </div>
+          <button id="play-again-btn" class="btn btn-primary">
+            Play Again
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Game Over Screen (kept for compatibility, but should not be used) -->
     <div id="gameover-screen" class="screen hidden">
-        <div class="gameover-container">
-            <h1>Game Over</h1>
-            <div id="winner-announcement" class="winner-announcement">
-                <h2 id="winner-name">Player 1 Wins!</h2>
-            </div>
-            <div id="final-scores" class="final-scores">
-                <!-- Final scores will be dynamically inserted here -->
-            </div>
-            <button id="play-again-btn" class="btn btn-primary">Play Again</button>
+      <div class="gameover-container">
+        <h1>Game Over</h1>
+        <div id="winner-announcement" class="winner-announcement">
+          <h2 id="winner-name">Player 1 Wins!</h2>
         </div>
+        <div id="final-scores" class="final-scores">
+          <!-- Final scores will be dynamically inserted here -->
+        </div>
+        <button id="play-again-btn" class="btn btn-primary">Play Again</button>
+      </div>
     </div>
 
     <script src="game.js"></script>
     <script src="ui.js"></script>
-</body>
+  </body>
 </html>
-

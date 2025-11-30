@@ -219,7 +219,16 @@ body {
 .game-options {
   margin-bottom: 24px;
   display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.setup-actions {
+  display: flex;
+  gap: 12px;
   justify-content: center;
+  margin-bottom: 16px;
 }
 
 .checkbox-label {
@@ -927,6 +936,12 @@ body {
   gap: 24px;
   color: rgba(255, 255, 255, 0.8);
   font-size: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.score-date {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.85rem;
 }
 
 /* Playing Card Styling (SVG) */

@@ -1,5 +1,5 @@
 /**
- * Six-Seven Card Game - UI Controller
+ * Sixen Card Game - UI Controller
  */
 
 let game = null;
@@ -29,12 +29,17 @@ const finalScores = document.getElementById("final-scores");
 const playAgainBtn = document.getElementById("play-again-btn");
 const gameLogo = document.getElementById("game-logo");
 const debugLoadScenarioBtn = document.getElementById("debug-load-scenario-btn");
+const showHighScoresBtn = document.getElementById("show-high-scores-btn");
+const highScoresOverlay = document.getElementById("high-scores-overlay");
+const highScoresList = document.getElementById("high-scores-list");
+const closeHighScoresBtn = document.getElementById("close-high-scores-btn");
 
 // State
 let pendingCollection = null;
 let previousStackCount = 0;
 let shouldAnimateNewStack = false; // Track if we should animate a new stack
 let autoPlayNewStacks = false; // Game option: auto-play on new stacks
+let autoDraw = false; // Game option: always automatically draw
 let debugMode = false; // Debug mode flag
 let isProcessing = false; // Prevent drawing during animations/processing
 
@@ -83,6 +88,16 @@ function initEventListeners() {
   startGameBtn.addEventListener("click", startGame);
   menuBtn.addEventListener("click", returnToMenu);
   playAgainBtn.addEventListener("click", returnToMenu);
+  if (showHighScoresBtn) {
+    showHighScoresBtn.addEventListener("click", showHighScores);
+  }
+  if (closeHighScoresBtn) {
+    closeHighScoresBtn.addEventListener("click", () => {
+      if (highScoresOverlay) {
+        highScoresOverlay.classList.add("hidden");
+      }
+    });
+  }
 
   // Use event delegation for player decks (since they're dynamically created)
   document.addEventListener("click", (e) => {
@@ -167,9 +182,11 @@ function startGame() {
     names.push(input.value.trim() || `Player ${i}`);
   }
 
-  // Get auto-play option
+  // Get game options
   const autoPlayCheckbox = document.getElementById("auto-play-new-stacks");
   autoPlayNewStacks = autoPlayCheckbox ? autoPlayCheckbox.checked : false;
+  const autoDrawCheckbox = document.getElementById("auto-draw");
+  autoDraw = autoDrawCheckbox ? autoDrawCheckbox.checked : false;
 
   game = new SixSevenGame(names);
   pendingCollection = null;
@@ -311,11 +328,40 @@ function renderGame() {
   if (
     state.gameOver ||
     (state.stuckPlayer !== null && state.currentPlayerIndex === state.stuckPlayer) ||
-    (state.numberDeckCount === 0 && !state.drawnCard)
+    (state.numberDeckCount === 0 && !state.drawnCard) ||
+    (state.stacks.length === 0)
   ) {
     game.gameOver = true;
     showGameOver();
     return;
+  }
+
+  // Check if there are no possible moves (all stacks full and >10, no face deck)
+  if (state.stacks.length > 0 && state.faceDeckCount === 0 && !state.drawnCard) {
+    // Check if any card from the number deck can be played
+    let hasPossibleMove = false;
+    // We can't check all cards without drawing, but we can check if all stacks are unplayable
+    // (full and sum > 10, meaning no match is possible)
+    const allStacksUnplayable = state.stacks.every((stack) => {
+      const sum = window.calculateStackSum(stack);
+      const isFull = window.isStackFull(stack);
+      // If stack is full and sum > 10, no card can match it (max card value is 10)
+      return isFull && sum > 10;
+    });
+    if (allStacksUnplayable) {
+      // No possible moves - end game
+      game.gameOver = true;
+      showGameOver();
+      return;
+    }
+  }
+
+  // Auto-draw if enabled and no card is drawn
+  if (autoDraw && !state.drawnCard && state.numberDeckCount > 0 && !isProcessing) {
+    // Small delay to allow render to complete
+    setTimeout(() => {
+      handleDrawCard();
+    }, 100);
   }
 }
 
@@ -843,8 +889,8 @@ function handleDrawCard() {
 
     if (result.createNewStack) {
       // A new stack was created
-      if (autoPlayNewStacks) {
-        // Auto-play on the new stack (if option enabled)
+      if (autoPlayNewStacks && autoDraw) {
+        // Auto-play on the new stack (only if both auto-draw and auto-play are enabled)
         const newPlays = game.getLegalPlaysForDrawnCard();
         if (newPlays.length > 0) {
           const play =
@@ -878,7 +924,19 @@ function handleDrawCard() {
       // Don't clear the drawn card - keep it visible for players in the final round
       const state = game.getState();
       const isSolitaire = state.players.length === 1;
-      const message = isSolitaire ? "No more moves!" : "No more moves, last round!";
+      const isAlreadyLastRound = state.stuckPlayer !== null;
+      
+      let message;
+      if (isSolitaire) {
+        message = "No more moves!";
+      } else if (isAlreadyLastRound) {
+        // Already in last round - this is another player who can't play
+        message = "No available moves";
+      } else {
+        // First player to get stuck - starting last round
+        message = "No available moves, last round!";
+      }
+      
       setTimeout(() => {
         showAnnouncement(message, null, 1500);
         setTimeout(() => {
@@ -955,6 +1013,7 @@ function handlePlayCard(stackIndex, side) {
     // No collection, just advance turn
     game.nextTurn();
     renderGame();
+    // Auto-draw will be handled in renderGame if enabled
   }
 }
 
@@ -1169,6 +1228,70 @@ function formatRankMessage(rank, isNewTopForPlayer) {
   } else {
     return `New High Score - ${rankText} place!`;
   }
+}
+
+/**
+ * Show high scores overlay
+ */
+function showHighScores() {
+  const scores = getHighScores();
+  
+  // Re-query elements in case they weren't available at script load time
+  const overlay = document.getElementById("high-scores-overlay");
+  const list = document.getElementById("high-scores-list");
+  
+  if (!list || !overlay) {
+    console.error("High scores overlay elements not found");
+    return;
+  }
+
+  list.innerHTML = "";
+
+  if (scores.length === 0) {
+    list.innerHTML = '<div class="score-entry"><p>No high scores yet!</p></div>';
+  } else {
+    scores.forEach((score, index) => {
+      const entry = document.createElement("div");
+      entry.className = "score-entry";
+      if (index === 0) entry.classList.add("winner");
+
+      // Format date
+      const date = new Date(score.timestamp);
+      const dateStr = date.toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+
+      // Trophy for top 3
+      let trophy = "";
+      if (index === 0) trophy = "🥇";
+      else if (index === 1) trophy = "🥈";
+      else if (index === 2) trophy = "🥉";
+
+      entry.innerHTML = `
+        <span class="player-name">${trophy ? trophy + " " : ""}${score.playerName}</span>
+        <div class="score-details">
+          <span>Stacks: ${score.faceCards}</span>
+          <span>Cards: ${score.totalCards}</span>
+          <span>6-7s: ${score.sixSevenCount}</span>
+          <span class="score-date">${dateStr}</span>
+        </div>
+      `;
+      list.appendChild(entry);
+    });
+  }
+
+  // Show overlay with fade-in
+  overlay.classList.remove("hidden");
+  overlay.classList.remove("fade-out");
+  requestAnimationFrame(() => {
+    overlay.style.opacity = "0";
+    overlay.style.transition = "opacity 0.5s ease";
+    requestAnimationFrame(() => {
+      overlay.style.opacity = "1";
+    });
+  });
 }
 
 /**

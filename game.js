@@ -1,5 +1,5 @@
 /**
- * Six-Seven Card Game - Core Game Logic
+ * Sixen Card Game - Core Game Logic
  */
 
 // Card value mappings

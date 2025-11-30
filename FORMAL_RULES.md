@@ -199,12 +199,16 @@ Stacks are not capped at the number of Players.
 
 The game ends under any of the following conditions:
 
-1. **Number Deck Exhausted**: If the Number Deck runs out (no cards remain to draw), the game ends immediately.
+1. **No Stacks Remaining**: If all Stacks have been collected and no Face Cards remain to create new Stacks, the game ends immediately (no need to wait for a draw).
 
-2. **Stuck Player Returns**: A Player, on their turn, draws a Number Card but has **no legal play** on any Stack **and** no Face Cards remain.
+2. **Number Deck Exhausted**: If the Number Deck runs out (no cards remain to draw), the game ends immediately.
+
+3. **Stuck Player Returns**: A Player, on their turn, draws a Number Card but has **no legal play** on any Stack **and** no Face Cards remain.
    - That Player keeps the card unplayed.
    - Play continues.
    - **When the turn returns to that same Player, the game ends immediately.**
+
+4. **No Possible Moves**: If all remaining Stacks are full (both sides at capacity) with sums greater than 10, and no Face Cards remain, no card from the Number Deck can be played (since the maximum card value is 10). The game ends immediately.
 
 ---
 

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Six-Seven Card Game</title>
+    <title>Sixen Card Game</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -11,7 +11,7 @@
     <div id="setup-screen" class="screen">
       <div class="setup-container">
         <div class="game-logo" id="game-logo"></div>
-        <h1 class="game-title">Six-Seven</h1>
+        <h1 class="game-title">Sixen</h1>
         <p class="game-subtitle">A tactical card collection game</p>
 
         <div class="player-setup">
@@ -48,14 +48,23 @@
 
           <div class="game-options">
             <label class="checkbox-label">
+              <input type="checkbox" id="auto-draw" />
+              <span>Always automatically draw</span>
+            </label>
+            <label class="checkbox-label">
               <input type="checkbox" id="auto-play-new-stacks" />
               <span>Auto-play on new stacks</span>
             </label>
           </div>
 
-          <button id="start-game-btn" class="btn btn-primary">
-            Start Game
-          </button>
+          <div class="setup-actions">
+            <button id="start-game-btn" class="btn btn-primary">
+              Start Game
+            </button>
+            <button id="show-high-scores-btn" class="btn btn-secondary">
+              High Scores
+            </button>
+          </div>
         </div>
 
         <div class="rules-summary">
@@ -127,6 +136,20 @@
             Play Again
           </button>
         </div>
+      </div>
+
+    </div>
+
+    <!-- High Scores Overlay (outside screens so it can be accessed from any screen) -->
+    <div id="high-scores-overlay" class="gameover-overlay hidden">
+      <div class="gameover-container">
+        <h1>High Scores</h1>
+        <div id="high-scores-list" class="final-scores">
+          <!-- High scores will be dynamically inserted here -->
+        </div>
+        <button id="close-high-scores-btn" class="btn btn-primary">
+          Close
+        </button>
       </div>
     </div>
 

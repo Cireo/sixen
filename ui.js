@@ -39,10 +39,10 @@ let pendingCollection = null;
 let previousStackCount = 0;
 let shouldAnimateNewStack = false; // Track if we should animate a new stack
 let autoPlayNewStacks = false; // Game option: auto-play on new stacks
-let autoDraw = false; // Game option: always automatically draw
+let autoDraw = false; // Game option: automatically draw
 let showStackSum = true; // Game option: show stack sum display
-let allowIllegalSumMoves = false; // Game option: allow clicking illegal sum moves (reject on click)
-let requireFaceDeckClick = false; // Game option: require clicking face deck to start new stack
+let hideIllegalMoves = true; // Game option: hide illegal moves (when true, don't show illegal sum moves)
+let autoStartNewStacks = true; // Game option: automatically start new stacks (when true, auto-create; when false, require click)
 let debugMode = false; // Debug mode flag
 let isProcessing = false; // Prevent drawing during animations/processing
 let noValidMovesTimer = null; // Timer for tracking when no valid moves
@@ -158,10 +158,11 @@ function initEventListeners() {
     });
   }
 
-  const allowIllegalSumCheckbox = document.getElementById("allow-illegal-sum-moves");
-  if (allowIllegalSumCheckbox) {
-    allowIllegalSumCheckbox.addEventListener("change", (e) => {
-      allowIllegalSumMoves = e.target.checked;
+  const hideIllegalMovesCheckbox =
+    document.getElementById("hide-illegal-moves");
+  if (hideIllegalMovesCheckbox) {
+    hideIllegalMovesCheckbox.addEventListener("change", (e) => {
+      hideIllegalMoves = e.target.checked;
       // Re-render game to apply the change immediately if game is active
       if (game && !gameScreen.classList.contains("hidden")) {
         renderGame();
@@ -169,10 +170,12 @@ function initEventListeners() {
     });
   }
 
-  const requireFaceDeckClickCheckbox = document.getElementById("require-face-deck-click");
-  if (requireFaceDeckClickCheckbox) {
-    requireFaceDeckClickCheckbox.addEventListener("change", (e) => {
-      requireFaceDeckClick = e.target.checked;
+  const autoStartNewStacksCheckbox = document.getElementById(
+    "auto-start-new-stacks",
+  );
+  if (autoStartNewStacksCheckbox) {
+    autoStartNewStacksCheckbox.addEventListener("change", (e) => {
+      autoStartNewStacks = e.target.checked;
       // Re-render game to apply the change immediately if game is active
       if (game && !gameScreen.classList.contains("hidden")) {
         renderGame();
@@ -182,7 +185,9 @@ function initEventListeners() {
 
   // Handle face deck clicks
   document.addEventListener("click", (e) => {
-    const faceDeckCorner = e.target.closest(".face-deck-corner.clickable-face-deck");
+    const faceDeckCorner = e.target.closest(
+      ".face-deck-corner.clickable-face-deck",
+    );
     if (faceDeckCorner) {
       handleFaceDeckClick();
     }
@@ -245,10 +250,17 @@ function startGame() {
   autoDraw = autoDrawCheckbox ? autoDrawCheckbox.checked : false;
   const showSumCheckbox = document.getElementById("show-stack-sum");
   showStackSum = showSumCheckbox ? showSumCheckbox.checked : true;
-  const allowIllegalSumCheckbox = document.getElementById("allow-illegal-sum-moves");
-  allowIllegalSumMoves = allowIllegalSumCheckbox ? allowIllegalSumCheckbox.checked : false;
-  const requireFaceDeckClickCheckbox = document.getElementById("require-face-deck-click");
-  requireFaceDeckClick = requireFaceDeckClickCheckbox ? requireFaceDeckClickCheckbox.checked : false;
+  const hideIllegalMovesCheckbox =
+    document.getElementById("hide-illegal-moves");
+  hideIllegalMoves = hideIllegalMovesCheckbox
+    ? hideIllegalMovesCheckbox.checked
+    : true;
+  const autoStartNewStacksCheckbox = document.getElementById(
+    "auto-start-new-stacks",
+  );
+  autoStartNewStacks = autoStartNewStacksCheckbox
+    ? autoStartNewStacksCheckbox.checked
+    : true;
 
   game = new SixSevenGame(names);
   pendingCollection = null;
@@ -462,25 +474,28 @@ function renderDecks(state) {
     }
   }
 
-  // Make face deck clickable if option is enabled and there are no valid moves
-  if (faceDeckCorner && requireFaceDeckClick) {
+  // Make face deck clickable if auto-start is disabled, player has drawn card, and face deck has cards
+  if (faceDeckCorner && !autoStartNewStacks) {
     const hasDrawnCard = state.drawnCard !== null;
     const legalPlays = hasDrawnCard ? game.getLegalPlaysForDrawnCard() : [];
-    const hasNoValidMoves = hasDrawnCard && legalPlays.length === 0 && state.faceDeckCount > 0;
+    const hasNoValidMoves = hasDrawnCard && legalPlays.length === 0;
+    const canClickFaceDeck = hasDrawnCard && state.faceDeckCount > 0;
 
-    if (hasNoValidMoves) {
+    if (canClickFaceDeck) {
       faceDeckCorner.classList.add("clickable-face-deck");
-      // Start timer if not already started
-      if (!noValidMovesTimer) {
-        const noValidMovesStartTime = Date.now();
+      // Start timer if no valid moves and not already started
+      if (hasNoValidMoves && !noValidMovesTimer) {
         noValidMovesTimer = setTimeout(() => {
           // Start shaking every few seconds
           startFaceDeckShaking();
         }, 15000); // 15 seconds
+      } else if (!hasNoValidMoves) {
+        // Clear timer and stop shaking if valid moves exist
+        clearNoValidMovesTimer();
+        stopFaceDeckShaking();
       }
     } else {
       faceDeckCorner.classList.remove("clickable-face-deck");
-      // Clear timer and stop shaking if valid moves exist
       clearNoValidMovesTimer();
       stopFaceDeckShaking();
     }
@@ -545,48 +560,57 @@ function clearNoValidMovesTimer() {
  * Handle clicking on face deck
  */
 function handleFaceDeckClick() {
-  if (!requireFaceDeckClick) return;
+  // Only handle clicks when auto-start is disabled
+  if (autoStartNewStacks) return;
 
   const state = game.getState();
   const hasDrawnCard = state.drawnCard !== null;
-  const legalPlays = hasDrawnCard ? game.getLegalPlaysForDrawnCard() : [];
-  const hasNoValidMoves = hasDrawnCard && legalPlays.length === 0;
 
+  // Check prerequisites
   if (!hasDrawnCard) {
     // No card drawn, do nothing
     return;
   }
 
-  if (hasNoValidMoves && state.faceDeckCount > 0) {
-    // No valid moves and face deck has cards - create new stack
-    clearNoValidMovesTimer();
-    stopFaceDeckShaking();
+  if (state.faceDeckCount === 0) {
+    // Face deck is empty, do nothing
+    return;
+  }
 
-    const result = game.handleNoLegalPlay();
-    if (result.createNewStack) {
-      // A new stack was created
-      if (autoPlayNewStacks && autoDraw) {
-        // Auto-play on the new stack (only if both auto-draw and auto-play are enabled)
-        const newPlays = game.getLegalPlaysForDrawnCard();
-        if (newPlays.length > 0) {
-          const play =
-            newPlays.find((p) => p.stackIndex === result.newStackIndex) ||
-            newPlays[0];
-          setTimeout(() => {
-            handlePlayCard(play.stackIndex, play.side);
-          }, 500);
-        }
-      } else {
-        renderGame(); // Re-render to show the new stack
-      }
-    }
-  } else if (legalPlays.length > 0) {
-    // Valid moves exist - show warning
+  // Check for valid plays
+  const legalPlays = game.getLegalPlaysForDrawnCard();
+
+  if (legalPlays.length > 0) {
+    // Valid moves exist - reject with message
     showAnnouncement(
-      "You can only start a new stack when there are no valid moves!",
+      "Cannot add a new stack while valid plays remain",
       null,
-      2000
+      2000,
     );
+    return;
+  }
+
+  // No valid moves and face deck has cards - create new stack
+  clearNoValidMovesTimer();
+  stopFaceDeckShaking();
+
+  const result = game.handleNoLegalPlay();
+  if (result.createNewStack) {
+    // A new stack was created
+    if (autoPlayNewStacks && autoDraw) {
+      // Auto-play on the new stack (only if both auto-draw and auto-play are enabled)
+      const newPlays = game.getLegalPlaysForDrawnCard();
+      if (newPlays.length > 0) {
+        const play =
+          newPlays.find((p) => p.stackIndex === result.newStackIndex) ||
+          newPlays[0];
+        setTimeout(() => {
+          handlePlayCard(play.stackIndex, play.side);
+        }, 500);
+      }
+    } else {
+      renderGame(); // Re-render to show the new stack
+    }
   }
 }
 
@@ -934,9 +958,10 @@ function renderStacksInternal(state) {
         // Higher z-index for later cards (so they're on top)
         leftSlot.style.zIndex = 10 + i;
       } else if (isNextLeftSlot) {
-        // Check if this is a legal play or if we should show it anyway (illegal sum moves option)
+        // Check if this is a legal play or if we should show it anyway (when not hiding illegal moves)
         const isLegalPlay = stackPlays.some((p) => p.side === "left");
-        const shouldShow = isLegalPlay || (allowIllegalSumMoves && state.drawnCard);
+        const shouldShow =
+          isLegalPlay || (!hideIllegalMoves && state.drawnCard);
         if (shouldShow) {
           leftSlot.classList.add("clickable");
           // Clickable slots get highest z-index
@@ -964,9 +989,10 @@ function renderStacksInternal(state) {
         // Higher z-index for later cards (so they're on top)
         rightSlot.style.zIndex = 10 + i;
       } else if (isNextRightSlot) {
-        // Check if this is a legal play or if we should show it anyway (illegal sum moves option)
+        // Check if this is a legal play or if we should show it anyway (when not hiding illegal moves)
         const isLegalPlay = stackPlays.some((p) => p.side === "right");
-        const shouldShow = isLegalPlay || (allowIllegalSumMoves && state.drawnCard);
+        const shouldShow =
+          isLegalPlay || (!hideIllegalMoves && state.drawnCard);
         if (shouldShow) {
           rightSlot.classList.add("clickable");
           // Clickable slots get highest z-index
@@ -995,13 +1021,19 @@ function renderStacksInternal(state) {
       if (stack.matchSlot) {
         matchSlot.classList.add("filled");
         matchSlot.appendChild(createCardElement(stack.matchSlot));
-      } else if (stackPlays.some((p) => p.side === "match")) {
-        matchSlot.classList.add("clickable");
-        // Clickable slots get highest z-index
-        matchSlot.style.zIndex = 100;
-        matchSlot.addEventListener("click", () =>
-          handlePlayCard(stackIndex, "match"),
-        );
+      } else {
+        // Check if this is a legal match play or if we should show it anyway (when not hiding illegal moves)
+        const isLegalMatch = stackPlays.some((p) => p.side === "match");
+        const shouldShowMatch =
+          isLegalMatch || (!hideIllegalMoves && isFull && state.drawnCard);
+        if (shouldShowMatch) {
+          matchSlot.classList.add("clickable");
+          // Clickable slots get highest z-index
+          matchSlot.style.zIndex = 100;
+          matchSlot.addEventListener("click", () =>
+            handlePlayCard(stackIndex, "match"),
+          );
+        }
       }
 
       matchRow.appendChild(matchSlot);
@@ -1074,6 +1106,42 @@ function renderStacksInternal(state) {
 }
 
 /**
+ * Check if there are any possible moves (including illegal ones) for the drawn card
+ * This is used when hideIllegalMoves is false to determine if we should wait longer
+ */
+function hasAnyPossibleMoves(state) {
+  if (!state.drawnCard) return false;
+
+  const cardValue = window.getCardValue(state.drawnCard);
+
+  // Check each stack for possible moves
+  for (let i = 0; i < state.stacks.length; i++) {
+    const stack = state.stacks[i];
+    const capacity = window.getStackCapacity(stack);
+    const isLeftFull = stack.left.length >= capacity;
+    const isRightFull = stack.right.length >= capacity;
+    const isStackFull = window.isStackFull(stack);
+
+    // Check if card could be played on left side (if there's room)
+    if (!isLeftFull) {
+      return true; // There's room, so it's a possible move (even if illegal)
+    }
+
+    // Check if card could be played on right side (if there's room)
+    if (!isRightFull) {
+      return true; // There's room, so it's a possible move (even if illegal)
+    }
+
+    // Check if card could be played as match (if stack is full)
+    if (isStackFull) {
+      return true; // Stack is full, so match is possible (even if card value doesn't match sum)
+    }
+  }
+
+  return false; // No possible moves at all
+}
+
+/**
  * Handle drawing a card
  */
 function handleDrawCard() {
@@ -1096,9 +1164,9 @@ function handleDrawCard() {
     renderGame(); // Show the drawn card
 
     const state = game.getState();
-    
-    // If requireFaceDeckClick is enabled and face deck has cards, don't auto-create stack
-    if (requireFaceDeckClick && state.faceDeckCount > 0) {
+
+    // If auto-start is disabled and face deck has cards, don't auto-create stack
+    if (!autoStartNewStacks && state.faceDeckCount > 0) {
       // Face deck has cards - wait for user to click
       return; // Don't proceed with auto-creating stack
     }
@@ -1138,7 +1206,7 @@ function handleDrawCard() {
         renderGame();
       }, 1500);
     } else {
-      // Player is stuck, show card for 1.5s, then show message and advance turn
+      // Player is stuck, show card, then show message and advance turn
       // Don't clear the drawn card - keep it visible for players in the final round
       const state = game.getState();
       const isSolitaire = state.players.length === 1;
@@ -1155,13 +1223,22 @@ function handleDrawCard() {
         message = "No available moves, last round!";
       }
 
+      // Check if there are any possible moves (including illegal ones) when hideIllegalMoves is false
+      let hasPossibleMoves = false;
+      if (!hideIllegalMoves && state.drawnCard) {
+        hasPossibleMoves = hasAnyPossibleMoves(state);
+      }
+
+      // Wait 3 seconds if there are possible moves (illegal ones), otherwise 1.5 seconds
+      const delay = hasPossibleMoves ? 3000 : 1500;
+
       setTimeout(() => {
         showAnnouncement(message, null, 1500);
         setTimeout(() => {
           game.nextTurn();
           renderGame();
         }, 1500);
-      }, 1500);
+      }, delay);
     }
     return; // Don't call renderGame() again at the end
   }
@@ -1173,14 +1250,14 @@ function handleDrawCard() {
  * Handle playing a card
  */
 function handlePlayCard(stackIndex, side) {
-  // Check if this is an illegal sum move before executing (if option is enabled)
-  if (allowIllegalSumMoves) {
+  // Check if this is an illegal sum move before executing (if not hiding illegal moves)
+  if (!hideIllegalMoves) {
     const state = game.getState();
     if (state.drawnCard) {
       const stack = state.stacks[stackIndex];
       const cardValue = window.getCardValue(state.drawnCard);
       const currentSum = window.calculateStackSum(stack);
-      
+
       let wouldBeIllegalBySum = false;
       if (side === "left") {
         // Check if left side is full first
@@ -1191,16 +1268,31 @@ function handlePlayCard(stackIndex, side) {
         }
       } else if (side === "right") {
         // Check if right side is full first
-        const isRightFull = stack.right.length >= window.getStackCapacity(stack);
+        const isRightFull =
+          stack.right.length >= window.getStackCapacity(stack);
         if (!isRightFull) {
           const newSum = currentSum - cardValue;
           wouldBeIllegalBySum = newSum < 0;
         }
+      } else if (side === "match") {
+        // Check if match is legal (card value must equal stack sum)
+        const isFull = window.isStackFull(stack);
+        if (isFull) {
+          wouldBeIllegalBySum = cardValue !== currentSum;
+        }
       }
-      
+
       if (wouldBeIllegalBySum) {
         // Show error message for illegal sum move
-        showAnnouncement("Cannot reduce stack sum below zero!", null, 2000);
+        if (side === "match") {
+          showAnnouncement(
+            `Card value (${cardValue}) must equal stack sum (${currentSum})!`,
+            null,
+            2000,
+          );
+        } else {
+          showAnnouncement("Cannot reduce stack sum below zero!", null, 2000);
+        }
         return;
       }
     }

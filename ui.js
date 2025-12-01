@@ -42,8 +42,11 @@ let autoPlayNewStacks = false; // Game option: auto-play on new stacks
 let autoDraw = false; // Game option: always automatically draw
 let showStackSum = true; // Game option: show stack sum display
 let allowIllegalSumMoves = false; // Game option: allow clicking illegal sum moves (reject on click)
+let requireFaceDeckClick = false; // Game option: require clicking face deck to start new stack
 let debugMode = false; // Debug mode flag
 let isProcessing = false; // Prevent drawing during animations/processing
+let noValidMovesTimer = null; // Timer for tracking when no valid moves
+let faceDeckShakeInterval = null; // Interval for shaking face deck
 
 // Player colors (neutral colors for 1-4 players)
 const PLAYER_COLORS = [
@@ -165,6 +168,25 @@ function initEventListeners() {
       }
     });
   }
+
+  const requireFaceDeckClickCheckbox = document.getElementById("require-face-deck-click");
+  if (requireFaceDeckClickCheckbox) {
+    requireFaceDeckClickCheckbox.addEventListener("change", (e) => {
+      requireFaceDeckClick = e.target.checked;
+      // Re-render game to apply the change immediately if game is active
+      if (game && !gameScreen.classList.contains("hidden")) {
+        renderGame();
+      }
+    });
+  }
+
+  // Handle face deck clicks
+  document.addEventListener("click", (e) => {
+    const faceDeckCorner = e.target.closest(".face-deck-corner.clickable-face-deck");
+    if (faceDeckCorner) {
+      handleFaceDeckClick();
+    }
+  });
 }
 
 /**
@@ -225,6 +247,8 @@ function startGame() {
   showStackSum = showSumCheckbox ? showSumCheckbox.checked : true;
   const allowIllegalSumCheckbox = document.getElementById("allow-illegal-sum-moves");
   allowIllegalSumMoves = allowIllegalSumCheckbox ? allowIllegalSumCheckbox.checked : false;
+  const requireFaceDeckClickCheckbox = document.getElementById("require-face-deck-click");
+  requireFaceDeckClick = requireFaceDeckClickCheckbox ? requireFaceDeckClickCheckbox.checked : false;
 
   game = new SixSevenGame(names);
   pendingCollection = null;
@@ -250,6 +274,8 @@ function returnToMenu() {
   previousStackCount = 0;
   shouldAnimateNewStack = false;
   isProcessing = false;
+  clearNoValidMovesTimer();
+  stopFaceDeckShaking();
   // Hide gameover overlay if visible
   if (gameoverOverlay) {
     gameoverOverlay.classList.add("hidden");
@@ -418,6 +444,7 @@ function renderGame() {
  */
 function renderDecks(state) {
   const faceDeckEl = document.getElementById("face-deck-display");
+  const faceDeckCorner = document.querySelector(".face-deck-corner");
 
   // Update face deck count
   if (faceDeckCount) {
@@ -433,6 +460,133 @@ function renderDecks(state) {
     } else {
       faceDeckEl.innerHTML = '<div class="empty-deck">Empty</div>';
     }
+  }
+
+  // Make face deck clickable if option is enabled and there are no valid moves
+  if (faceDeckCorner && requireFaceDeckClick) {
+    const hasDrawnCard = state.drawnCard !== null;
+    const legalPlays = hasDrawnCard ? game.getLegalPlaysForDrawnCard() : [];
+    const hasNoValidMoves = hasDrawnCard && legalPlays.length === 0 && state.faceDeckCount > 0;
+
+    if (hasNoValidMoves) {
+      faceDeckCorner.classList.add("clickable-face-deck");
+      // Start timer if not already started
+      if (!noValidMovesTimer) {
+        const noValidMovesStartTime = Date.now();
+        noValidMovesTimer = setTimeout(() => {
+          // Start shaking every few seconds
+          startFaceDeckShaking();
+        }, 15000); // 15 seconds
+      }
+    } else {
+      faceDeckCorner.classList.remove("clickable-face-deck");
+      // Clear timer and stop shaking if valid moves exist
+      clearNoValidMovesTimer();
+      stopFaceDeckShaking();
+    }
+  } else if (faceDeckCorner) {
+    faceDeckCorner.classList.remove("clickable-face-deck");
+    clearNoValidMovesTimer();
+    stopFaceDeckShaking();
+  }
+}
+
+/**
+ * Start shaking the face deck
+ */
+function startFaceDeckShaking() {
+  const faceDeckCorner = document.querySelector(".face-deck-corner");
+  if (!faceDeckCorner) return;
+
+  // Clear any existing interval
+  if (faceDeckShakeInterval) {
+    clearInterval(faceDeckShakeInterval);
+  }
+
+  // Shake immediately, then every 3 seconds
+  faceDeckCorner.classList.add("shaking");
+  setTimeout(() => {
+    faceDeckCorner.classList.remove("shaking");
+  }, 500);
+
+  faceDeckShakeInterval = setInterval(() => {
+    faceDeckCorner.classList.add("shaking");
+    setTimeout(() => {
+      faceDeckCorner.classList.remove("shaking");
+    }, 500);
+  }, 3000); // Shake every 3 seconds
+}
+
+/**
+ * Stop shaking the face deck
+ */
+function stopFaceDeckShaking() {
+  const faceDeckCorner = document.querySelector(".face-deck-corner");
+  if (faceDeckCorner) {
+    faceDeckCorner.classList.remove("shaking");
+  }
+  if (faceDeckShakeInterval) {
+    clearInterval(faceDeckShakeInterval);
+    faceDeckShakeInterval = null;
+  }
+}
+
+/**
+ * Clear the no valid moves timer
+ */
+function clearNoValidMovesTimer() {
+  if (noValidMovesTimer) {
+    clearTimeout(noValidMovesTimer);
+    noValidMovesTimer = null;
+  }
+}
+
+/**
+ * Handle clicking on face deck
+ */
+function handleFaceDeckClick() {
+  if (!requireFaceDeckClick) return;
+
+  const state = game.getState();
+  const hasDrawnCard = state.drawnCard !== null;
+  const legalPlays = hasDrawnCard ? game.getLegalPlaysForDrawnCard() : [];
+  const hasNoValidMoves = hasDrawnCard && legalPlays.length === 0;
+
+  if (!hasDrawnCard) {
+    // No card drawn, do nothing
+    return;
+  }
+
+  if (hasNoValidMoves && state.faceDeckCount > 0) {
+    // No valid moves and face deck has cards - create new stack
+    clearNoValidMovesTimer();
+    stopFaceDeckShaking();
+
+    const result = game.handleNoLegalPlay();
+    if (result.createNewStack) {
+      // A new stack was created
+      if (autoPlayNewStacks && autoDraw) {
+        // Auto-play on the new stack (only if both auto-draw and auto-play are enabled)
+        const newPlays = game.getLegalPlaysForDrawnCard();
+        if (newPlays.length > 0) {
+          const play =
+            newPlays.find((p) => p.stackIndex === result.newStackIndex) ||
+            newPlays[0];
+          setTimeout(() => {
+            handlePlayCard(play.stackIndex, play.side);
+          }, 500);
+        }
+      } else {
+        renderGame(); // Re-render to show the new stack
+      }
+    }
+  } else if (legalPlays.length > 0) {
+    // Valid moves exist - show warning
+    showAnnouncement(
+      "You can only start a new stack when there are no valid moves!",
+      null,
+      2000
+    );
   }
 }
 
@@ -941,6 +1095,14 @@ function handleDrawCard() {
     // No legal plays available
     renderGame(); // Show the drawn card
 
+    const state = game.getState();
+    
+    // If requireFaceDeckClick is enabled and face deck has cards, don't auto-create stack
+    if (requireFaceDeckClick && state.faceDeckCount > 0) {
+      // Face deck has cards - wait for user to click
+      return; // Don't proceed with auto-creating stack
+    }
+
     const result = game.handleNoLegalPlay();
 
     if (result.createNewStack) {
@@ -1093,6 +1255,8 @@ function handlePlayCard(stackIndex, side) {
           shouldAnimateNewStack = newStackCount === oldStackCount;
           pendingCollection = null;
           isProcessing = false; // Unlock drawing after animation completes
+          clearNoValidMovesTimer();
+          stopFaceDeckShaking();
           game.nextTurn();
           renderGame();
         }, 300); // Match fade-out animation duration
@@ -1100,6 +1264,8 @@ function handlePlayCard(stackIndex, side) {
     }, 200); // Brief delay before animation starts
   } else {
     // No collection, just advance turn
+    clearNoValidMovesTimer();
+    stopFaceDeckShaking();
     game.nextTurn();
     renderGame();
     // Auto-draw will be handled in renderGame if enabled

@@ -1519,6 +1519,8 @@ function addHighScore(playerName, faceCards, totalCards, sixSevenCount) {
     rank,
     isInTop20: rankInTop20 >= 0,
     isNewTopForPlayer,
+    newScoreTimestamp: newScore.timestamp, // Return timestamp to identify the new score
+    newScore: newScore, // Return the new score object for display when not in top 20
   };
 }
 
@@ -1655,6 +1657,81 @@ function showHighScores() {
 }
 
 /**
+ * Get nearby scores for display (3 above and 3 below, or lowest 3 + ellipsis + latest)
+ */
+function getNearbyScores(allScores, newScoreTimestamp, isInTop20, newScoreObj) {
+  if (allScores.length === 0) {
+    // No saved scores, just show the new score
+    if (newScoreObj) {
+      return [
+        {
+          score: newScoreObj,
+          isNewScore: true,
+          displayIndex: 1,
+        },
+      ];
+    }
+    return [];
+  }
+
+  // Find the index of the new score in saved scores
+  const newScoreIndex = allScores.findIndex(
+    (s) => s.timestamp === newScoreTimestamp,
+  );
+
+  if (isInTop20 && newScoreIndex >= 0) {
+    // Show 3 above and 3 below the new score
+    const startIndex = Math.max(0, newScoreIndex - 3);
+    const endIndex = Math.min(allScores.length, newScoreIndex + 4); // +4 to include the new score and 3 below
+    return allScores.slice(startIndex, endIndex).map((score, idx) => ({
+      score,
+      isNewScore: score.timestamp === newScoreTimestamp,
+      displayIndex: startIndex + idx + 1, // 1-based rank
+    }));
+  } else {
+    // Show lowest 3 + ellipsis + latest (new score)
+    const lowest3 = allScores.slice(-3); // Last 3 (lowest scores)
+
+    // Check if new score is already in the lowest 3 (shouldn't happen if not in top 20, but check anyway)
+    const isInLowest3 = lowest3.some((s) => s.timestamp === newScoreTimestamp);
+
+    if (isInLowest3) {
+      // New score is already in the lowest 3, just show those
+      return lowest3.map((score, idx) => ({
+        score,
+        isNewScore: score.timestamp === newScoreTimestamp,
+        displayIndex: allScores.length - 3 + idx + 1,
+      }));
+    } else {
+      // Show lowest 3, ellipsis, and new score
+      const result = [
+        ...lowest3.map((score, idx) => ({
+          score,
+          isNewScore: false,
+          displayIndex: allScores.length - 3 + idx + 1,
+        })),
+      ];
+
+      // Only add ellipsis if there are more than 3 scores
+      if (allScores.length > 3) {
+        result.push({ isEllipsis: true });
+      }
+
+      // Add the new score
+      if (newScoreObj) {
+        result.push({
+          score: newScoreObj,
+          isNewScore: true,
+          displayIndex: ">20",
+        });
+      }
+
+      return result;
+    }
+  }
+}
+
+/**
  * Show game over overlay
  */
 function showGameOver() {
@@ -1663,7 +1740,7 @@ function showGameOver() {
   const isSolitaire = scores.length === 1;
 
   if (isSolitaire) {
-    // Solitaire mode: show high score message
+    // Solitaire mode: show high score message and nearby scores
     const result = addHighScore(
       winner.name,
       winner.faceCards,
@@ -1679,18 +1756,71 @@ function showGameOver() {
     }
 
     winnerName.textContent = message;
+
+    // Display nearby scores
+    const allScores = getHighScores();
+    const nearbyScores = getNearbyScores(
+      allScores,
+      result.newScoreTimestamp,
+      result.isInTop20,
+      result.newScore,
+    );
+
+    finalScores.innerHTML = "";
+    nearbyScores.forEach((item) => {
+      if (item.isEllipsis) {
+        // Add ellipsis
+        const ellipsis = document.createElement("div");
+        ellipsis.className = "score-entry score-ellipsis";
+        ellipsis.innerHTML =
+          '<span style="color: rgba(255, 255, 255, 0.5);">⋯</span>';
+        finalScores.appendChild(ellipsis);
+      } else {
+        const entry = document.createElement("div");
+        entry.className = "score-entry";
+        if (item.isNewScore) {
+          entry.classList.add("new-score");
+        }
+
+        // Format date
+        const date = new Date(item.score.timestamp);
+        const dateStr = date.toLocaleDateString(undefined, {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
+
+        // Trophy for top 3 (only if in top 20)
+        let trophy = "";
+        if (typeof item.displayIndex === "number") {
+          if (item.displayIndex === 1) trophy = "🥇";
+          else if (item.displayIndex === 2) trophy = "🥈";
+          else if (item.displayIndex === 3) trophy = "🥉";
+        }
+
+        entry.innerHTML = `
+            <span class="player-name">${trophy ? trophy + " " : ""}${item.score.playerName}</span>
+            <div class="score-details">
+                <span>Stacks: ${item.score.faceCards}</span>
+                <span>Cards: ${item.score.totalCards}</span>
+                <span>6-7s: ${item.score.sixSevenCount}</span>
+                <span class="score-date">${dateStr}</span>
+            </div>
+        `;
+        finalScores.appendChild(entry);
+      }
+    });
   } else {
     // Multi-player mode: show winner
     winnerName.textContent = `${winner.name} Wins!`;
-  }
 
-  finalScores.innerHTML = "";
-  scores.forEach((player, index) => {
-    const entry = document.createElement("div");
-    entry.className = "score-entry";
-    if (index === 0) entry.classList.add("winner");
+    finalScores.innerHTML = "";
+    scores.forEach((player, index) => {
+      const entry = document.createElement("div");
+      entry.className = "score-entry";
+      if (index === 0) entry.classList.add("winner");
 
-    entry.innerHTML = `
+      entry.innerHTML = `
             <span class="player-name">${player.name}</span>
             <div class="score-details">
                 <span>Stacks: ${player.faceCards}</span>
@@ -1698,8 +1828,9 @@ function showGameOver() {
                 <span>6-7s: ${player.sixSevenCount}</span>
             </div>
         `;
-    finalScores.appendChild(entry);
-  });
+      finalScores.appendChild(entry);
+    });
+  }
 
   // Show as overlay with fade-in
   gameoverOverlay.classList.remove("hidden");

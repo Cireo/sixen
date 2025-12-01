@@ -956,6 +956,18 @@ body {
   border-radius: 8px;
 }
 
+.score-entry.new-score {
+  background: rgba(75, 192, 192, 0.2);
+  border-radius: 8px;
+  border: 2px solid rgba(75, 192, 192, 0.5);
+}
+
+.score-entry.score-ellipsis {
+  justify-content: center;
+  padding: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 .score-entry .player-name {
   font-weight: bold;
   font-size: 1.1rem;
@@ -963,6 +975,10 @@ body {
 
 .score-entry.winner .player-name {
   color: var(--gold);
+}
+
+.score-entry.new-score .player-name {
+  color: #4bc0c0;
 }
 
 .score-details {

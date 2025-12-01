@@ -40,6 +40,7 @@ let previousStackCount = 0;
 let shouldAnimateNewStack = false; // Track if we should animate a new stack
 let autoPlayNewStacks = false; // Game option: auto-play on new stacks
 let autoDraw = false; // Game option: always automatically draw
+let showStackSum = true; // Game option: show stack sum display
 let debugMode = false; // Debug mode flag
 let isProcessing = false; // Prevent drawing during animations/processing
 
@@ -196,6 +197,8 @@ function startGame() {
   autoPlayNewStacks = autoPlayCheckbox ? autoPlayCheckbox.checked : false;
   const autoDrawCheckbox = document.getElementById("auto-draw");
   autoDraw = autoDrawCheckbox ? autoDrawCheckbox.checked : false;
+  const showSumCheckbox = document.getElementById("show-stack-sum");
+  showStackSum = showSumCheckbox ? showSumCheckbox.checked : true;
 
   game = new SixSevenGame(names);
   pendingCollection = null;
@@ -820,15 +823,17 @@ function renderStacksInternal(state) {
       modifiersArea.appendChild(matchRow);
     }
 
-    // Stack sum
-    const sumDisplay = document.createElement("div");
-    sumDisplay.className = "stack-sum";
-    if (sum > 10) {
-      sumDisplay.innerHTML = `Sum: <span class="sum-value sum-high">${sum}</span>`;
-    } else {
-      sumDisplay.innerHTML = `Sum: <span class="sum-value">${sum}</span>`;
+    // Stack sum (only show if setting is enabled)
+    if (showStackSum) {
+      const sumDisplay = document.createElement("div");
+      sumDisplay.className = "stack-sum";
+      if (sum > 10) {
+        sumDisplay.innerHTML = `Sum: <span class="sum-value sum-high">${sum}</span>`;
+      } else {
+        sumDisplay.innerHTML = `Sum: <span class="sum-value">${sum}</span>`;
+      }
+      stackEl.appendChild(sumDisplay);
     }
-    stackEl.appendChild(sumDisplay);
 
     // Append stack to container
     stacksContainer.appendChild(stackEl);

@@ -48,41 +48,14 @@ let isProcessing = false; // Prevent drawing during animations/processing
 let noValidMovesTimer = null; // Timer for tracking when no valid moves
 let faceDeckShakeInterval = null; // Interval for shaking face deck
 
-// Player colors (neutral colors for 1-4 players)
-const PLAYER_COLORS = [
-  "#4A90E2", // Blue
-  "#E24A4A", // Red
-  "#4AE24A", // Green
-  "#E2E24A", // Yellow
-];
+// Import from rendering.js (access directly to avoid redeclaration errors)
+// Helper to access rendering functions without creating const conflicts
+const getRendering = () => window.Rendering || {};
 
-// Suit name mapping for SVG-cards
-const SUIT_NAMES = {
-  hearts: "heart",
-  diamonds: "diamond",
-  clubs: "club",
-  spades: "spade",
-};
-
-// Rank name mapping for SVG-cards
-function getCardId(card) {
-  const suitName = SUIT_NAMES[card.suit];
-  let rankName;
-
-  if (card.rank === "J") {
-    rankName = "jack";
-  } else if (card.rank === "Q") {
-    rankName = "queen";
-  } else if (card.rank === "K") {
-    rankName = "king";
-  } else if (card.rank === "A") {
-    rankName = "1"; // Ace is 1 in SVG-cards
-  } else {
-    rankName = card.rank;
-  }
-
-  return `${suitName}_${rankName}`;
-}
+// Import from utils.js, high-scores.js, and ui-helpers.js (access directly to avoid redeclaration errors)
+const getUtils = () => window.Utils || {};
+const getHighScoresModule = () => window.HighScores || {};
+const getUIHelpers = () => window.UIHelpers || {};
 
 /**
  * Initialize event listeners
@@ -305,85 +278,6 @@ function showScreen(screen) {
   gameoverScreen.classList.toggle("hidden", screen !== "gameover");
 }
 
-/**
- * Create a playing card element using SVG-cards
- */
-function createCardElement(card, size = "normal") {
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  let width, height;
-  if (size === "small") {
-    width = "94";
-    height = "131";
-  } else if (size === "large") {
-    width = "150";
-    height = "210";
-  } else {
-    width = "125";
-    height = "175";
-  }
-  svg.setAttribute("width", width);
-  svg.setAttribute("height", height);
-  svg.setAttribute("viewBox", "0 0 169.075 244.64");
-  svg.setAttribute("class", "card-svg");
-  svg.setAttributeNS(
-    "http://www.w3.org/2000/xmlns/",
-    "xmlns",
-    "http://www.w3.org/2000/svg",
-  );
-  svg.setAttributeNS(
-    "http://www.w3.org/2000/xmlns/",
-    "xmlns:xlink",
-    "http://www.w3.org/1999/xlink",
-  );
-
-  const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
-  const cardId = getCardId(card);
-  // Use xlink:href for compatibility
-  use.setAttributeNS(
-    "http://www.w3.org/1999/xlink",
-    "href",
-    `svg-cards.svg#${cardId}`,
-  );
-  use.setAttribute("x", "0");
-  use.setAttribute("y", "0");
-
-  svg.appendChild(use);
-  return svg;
-}
-
-/**
- * Create a card back element
- */
-function createCardBackElement() {
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("width", "125");
-  svg.setAttribute("height", "175");
-  svg.setAttribute("viewBox", "0 0 169.075 244.64");
-  svg.setAttribute("class", "card-svg");
-  svg.setAttributeNS(
-    "http://www.w3.org/2000/xmlns/",
-    "xmlns",
-    "http://www.w3.org/2000/svg",
-  );
-  svg.setAttributeNS(
-    "http://www.w3.org/2000/xmlns/",
-    "xmlns:xlink",
-    "http://www.w3.org/1999/xlink",
-  );
-
-  const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
-  use.setAttributeNS(
-    "http://www.w3.org/1999/xlink",
-    "href",
-    "svg-cards.svg#back",
-  );
-  use.setAttribute("x", "0");
-  use.setAttribute("y", "0");
-  use.setAttribute("fill", "#0062ff"); // Default blue back
-
-  svg.appendChild(use);
-  return svg;
-}
 
 /**
  * Render the entire game state
@@ -419,8 +313,6 @@ function renderGame() {
     state.faceDeckCount === 0 &&
     !state.drawnCard
   ) {
-    // Check if any card from the number deck can be played
-    let hasPossibleMove = false;
     // We can't check all cards without drawing, but we can check if all stacks are unplayable
     // (full and sum > 10, meaning no match is possible)
     const allStacksUnplayable = state.stacks.every((stack) => {
@@ -467,7 +359,7 @@ function renderDecks(state) {
   if (faceDeckEl) {
     faceDeckEl.innerHTML = "";
     if (state.faceDeckCount > 0) {
-      const cardStack = createDeckStack(state.faceDeckCount);
+      const cardStack = getRendering().createDeckStack(state.faceDeckCount);
       faceDeckEl.appendChild(cardStack);
     } else {
       faceDeckEl.innerHTML = '<div class="empty-deck">Empty</div>';
@@ -614,26 +506,6 @@ function handleFaceDeckClick() {
   }
 }
 
-/**
- * Create a visual deck stack with offset cards
- */
-function createDeckStack(count) {
-  const container = document.createElement("div");
-  container.className = "deck-stack";
-
-  // Show up to 5 offset cards to indicate depth
-  const cardsToShow = Math.min(count, 5);
-  for (let i = 0; i < cardsToShow; i++) {
-    const cardBack = createCardBackElement();
-    cardBack.style.position = i === cardsToShow - 1 ? "relative" : "absolute";
-    cardBack.style.top = `${i * 2}px`;
-    cardBack.style.left = `${i * 1}px`;
-    cardBack.style.zIndex = i;
-    container.appendChild(cardBack);
-  }
-
-  return container;
-}
 
 /**
  * Render players at top
@@ -644,11 +516,7 @@ function renderPlayers(state) {
   // Calculate scores for ranking
   const scored = state.players.map((player, index) => {
     const faceCards = player.collected.length;
-    let totalCards = 0;
-    player.collected.forEach((stack) => {
-      totalCards +=
-        1 + stack.left.length + stack.right.length + (stack.matchSlot ? 1 : 0);
-    });
+    const totalCards = getUtils().calculateTotalCards(player);
     return {
       ...player,
       index,
@@ -657,14 +525,8 @@ function renderPlayers(state) {
     };
   });
 
-  // Sort by scoring rules (same as calculateScores)
-  scored.sort((a, b) => {
-    if (b.faceCards !== a.faceCards) return b.faceCards - a.faceCards;
-    if (b.totalCards !== a.totalCards) return b.totalCards - a.totalCards;
-    if (b.sixSevenCount !== a.sixSevenCount)
-      return b.sixSevenCount - a.sixSevenCount;
-    return 0; // Don't sort by turn order for display
-  });
+  // Sort by scoring rules (same as calculateScores, but without timestamp)
+  scored.sort((a, b) => getHighScoresModule().compareScores(a, b, false));
 
   // Determine rank (1st, 2nd, 3rd)
   const ranks = {};
@@ -678,7 +540,8 @@ function renderPlayers(state) {
   state.players.forEach((player, index) => {
     const entry = document.createElement("div");
     entry.className = "player-entry";
-    const playerColor = PLAYER_COLORS[index % PLAYER_COLORS.length];
+    const playerColors = getRendering().PLAYER_COLORS || [];
+    const playerColor = playerColors[index % playerColors.length];
     const isCurrentPlayer = index === state.currentPlayerIndex;
     const rank = ranks[index];
 
@@ -692,11 +555,7 @@ function renderPlayers(state) {
     }
 
     const faceCards = player.collected.length;
-    let totalCards = 0;
-    player.collected.forEach((stack) => {
-      totalCards +=
-        1 + stack.left.length + stack.right.length + (stack.matchSlot ? 1 : 0);
-    });
+    const totalCards = getUtils().calculateTotalCards(player);
 
     const nameStyle = isCurrentPlayer
       ? `color: ${playerColor};`
@@ -704,12 +563,7 @@ function renderPlayers(state) {
 
     // Trophy/ribbon emoji (only show for multi-player games)
     const isSolitaire = state.players.length === 1;
-    let trophy = "";
-    if (!isSolitaire) {
-      if (rank === 1) trophy = "🥇";
-      else if (rank === 2) trophy = "🥈";
-      else if (rank === 3) trophy = "🥉";
-    }
+    const trophy = !isSolitaire ? getUtils().getTrophyEmoji(rank) : "";
 
     // Deck display for current player (reserve space for all)
     const deckHtml = `
@@ -751,8 +605,9 @@ function renderPlayers(state) {
  * Update player deck displays
  */
 function updatePlayerDecks(state) {
-  const currentPlayerColor =
-    PLAYER_COLORS[state.currentPlayerIndex % PLAYER_COLORS.length];
+    const playerColors = getRendering().PLAYER_COLORS || [];
+    const currentPlayerColor =
+      playerColors[state.currentPlayerIndex % playerColors.length];
 
   state.players.forEach((player, index) => {
     const isCurrentPlayer = index === state.currentPlayerIndex;
@@ -795,7 +650,7 @@ function updatePlayerDecks(state) {
           const display = drawnCardOverlay.querySelector(".drawn-card-display");
           if (display) {
             display.innerHTML = "";
-            display.appendChild(createCardElement(state.drawnCard));
+            display.appendChild(getRendering().createCardElement(state.drawnCard));
           }
         }
       } else if (playerHasStuckCard && player.stuckCard) {
@@ -806,7 +661,7 @@ function updatePlayerDecks(state) {
           const display = drawnCardOverlay.querySelector(".drawn-card-display");
           if (display) {
             display.innerHTML = "";
-            display.appendChild(createCardElement(player.stuckCard));
+            display.appendChild(getRendering().createCardElement(player.stuckCard));
           }
         }
       } else if (isCurrentPlayer) {
@@ -833,7 +688,7 @@ function updatePlayerDecks(state) {
         if (existingEmpty) existingEmpty.remove();
 
         if (state.numberDeckCount > 0) {
-          const cardStack = createDeckStack(state.numberDeckCount);
+          const cardStack = getRendering().createDeckStack(state.numberDeckCount);
           deckDisplay.appendChild(cardStack);
         } else {
           const emptyDiv = document.createElement("div");
@@ -918,7 +773,7 @@ function renderStacksInternal(state) {
     // Face card
     const faceArea = document.createElement("div");
     faceArea.className = "stack-face";
-    faceArea.appendChild(createCardElement(stack.face));
+    faceArea.appendChild(getRendering().createCardElement(stack.face));
     stackEl.appendChild(faceArea);
 
     // Modifier rows
@@ -927,16 +782,7 @@ function renderStacksInternal(state) {
 
     const capacity = getStackCapacity(stack);
 
-    // Calculate horizontal offsets based on capacity
-    // J (capacity 1): [0]
-    // Q (capacity 2): [-4, 4]
-    // K (capacity 3): [-8, 0, 8]
-    const getHorizontalOffset = (index, cap) => {
-      if (cap === 1) return 0;
-      if (cap === 2) return index === 0 ? -4 : 4;
-      if (cap === 3) return index === 0 ? -8 : index === 1 ? 0 : 8;
-      return 0;
-    };
+    // Horizontal offsets are calculated using getHorizontalOffset from utils.js
 
     for (let i = 0; i < capacity; i++) {
       const row = document.createElement("div");
@@ -948,12 +794,12 @@ function renderStacksInternal(state) {
       const isNextLeftSlot = i === stack.left.length;
 
       // Apply horizontal offset to ALL slots (filled, clickable, and empty)
-      const offset = getHorizontalOffset(i, capacity);
+      const offset = getUtils().getHorizontalOffset(i, capacity);
       leftSlot.style.transform = `translateX(${offset}px)`;
 
       if (stack.left[i]) {
         leftSlot.classList.add("filled");
-        const cardEl = createCardElement(stack.left[i]);
+        const cardEl = getRendering().createCardElement(stack.left[i]);
         leftSlot.appendChild(cardEl);
         // Higher z-index for later cards (so they're on top)
         leftSlot.style.zIndex = 10 + i;
@@ -979,12 +825,12 @@ function renderStacksInternal(state) {
       const isNextRightSlot = i === stack.right.length;
 
       // Apply horizontal offset to ALL slots (filled, clickable, and empty)
-      const rightOffset = getHorizontalOffset(i, capacity);
+      const rightOffset = getUtils().getHorizontalOffset(i, capacity);
       rightSlot.style.transform = `translateX(${rightOffset}px)`;
 
       if (stack.right[i]) {
         rightSlot.classList.add("filled");
-        const cardEl = createCardElement(stack.right[i]);
+        const cardEl = getRendering().createCardElement(stack.right[i]);
         rightSlot.appendChild(cardEl);
         // Higher z-index for later cards (so they're on top)
         rightSlot.style.zIndex = 10 + i;
@@ -1020,7 +866,7 @@ function renderStacksInternal(state) {
 
       if (stack.matchSlot) {
         matchSlot.classList.add("filled");
-        matchSlot.appendChild(createCardElement(stack.matchSlot));
+        matchSlot.appendChild(getRendering().createCardElement(stack.matchSlot));
       } else {
         // Check if this is a legal match play or if we should show it anyway (when not hiding illegal moves)
         const isLegalMatch = stackPlays.some((p) => p.side === "match");
@@ -1447,155 +1293,13 @@ function showAnnouncement(text, callback, autoDismissDelay = null) {
   }
 }
 
-/**
- * High score management
- */
-const HIGH_SCORE_KEY = "sixseven-highscores";
-const MAX_HIGH_SCORES = 20;
-
-function getHighScores() {
-  try {
-    const stored = localStorage.getItem(HIGH_SCORE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch (e) {
-    return [];
-  }
-}
-
-function saveHighScores(scores) {
-  try {
-    localStorage.setItem(HIGH_SCORE_KEY, JSON.stringify(scores));
-  } catch (e) {
-    console.error("Failed to save high scores:", e);
-  }
-}
-
-function addHighScore(playerName, faceCards, totalCards, sixSevenCount) {
-  const scores = getHighScores();
-  const newScore = {
-    playerName,
-    faceCards,
-    totalCards,
-    sixSevenCount,
-    timestamp: Date.now(),
-  };
-
-  // Check if this is the player's personal best BEFORE adding to list
-  const isNewTopForPlayer = isNewTopScoreForPlayer(
-    playerName,
-    newScore,
-    scores,
-  );
-
-  // Add new score
-  scores.push(newScore);
-
-  // Sort by same rules as calculateScores
-  scores.sort((a, b) => {
-    if (b.faceCards !== a.faceCards) return b.faceCards - a.faceCards;
-    if (b.totalCards !== a.totalCards) return b.totalCards - a.totalCards;
-    if (b.sixSevenCount !== a.sixSevenCount)
-      return b.sixSevenCount - a.sixSevenCount;
-    // If all tie, oldest stays (lower timestamp = older)
-    return a.timestamp - b.timestamp;
-  });
-
-  // Find position of new score in full sorted list
-  const newScoreIndex = scores.findIndex(
-    (s) => s.timestamp === newScore.timestamp,
-  );
-
-  // Keep only top 20
-  const topScores = scores.slice(0, MAX_HIGH_SCORES);
-  saveHighScores(topScores);
-
-  // Determine rank (if in top 20, use position in top 20; otherwise show >20)
-  const rankInTop20 = topScores.findIndex(
-    (s) => s.timestamp === newScore.timestamp,
-  );
-  const rank = rankInTop20 >= 0 ? rankInTop20 + 1 : ">20";
-
-  return {
-    rank,
-    isInTop20: rankInTop20 >= 0,
-    isNewTopForPlayer,
-    newScoreTimestamp: newScore.timestamp, // Return timestamp to identify the new score
-    newScore: newScore, // Return the new score object for display when not in top 20
-  };
-}
-
-function isNewTopScoreForPlayer(playerName, newScore, allScores) {
-  // Get all scores for this player name
-  const playerScores = allScores.filter((s) => s.playerName === playerName);
-
-  // If player has no previous scores, this is their top score
-  if (playerScores.length === 0) return true;
-
-  // Sort player's scores by same rules
-  playerScores.sort((a, b) => {
-    if (b.faceCards !== a.faceCards) return b.faceCards - a.faceCards;
-    if (b.totalCards !== a.totalCards) return b.totalCards - a.totalCards;
-    if (b.sixSevenCount !== a.sixSevenCount)
-      return b.sixSevenCount - a.sixSevenCount;
-    return a.timestamp - b.timestamp;
-  });
-
-  // Get the player's current top score
-  const topPlayerScore = playerScores[0];
-
-  // Check if new score is better than or equal to top player score
-  if (newScore.faceCards > topPlayerScore.faceCards) return true;
-  if (
-    newScore.faceCards === topPlayerScore.faceCards &&
-    newScore.totalCards > topPlayerScore.totalCards
-  )
-    return true;
-  if (
-    newScore.faceCards === topPlayerScore.faceCards &&
-    newScore.totalCards === topPlayerScore.totalCards &&
-    newScore.sixSevenCount > topPlayerScore.sixSevenCount
-  )
-    return true;
-  // If all equal, it's considered a new top (ties count as new top)
-  if (
-    newScore.faceCards === topPlayerScore.faceCards &&
-    newScore.totalCards === topPlayerScore.totalCards &&
-    newScore.sixSevenCount === topPlayerScore.sixSevenCount
-  )
-    return true;
-
-  return false;
-}
-
-function formatRankMessage(rank, isNewTopForPlayer) {
-  let trophy = "";
-  if (rank === 1) trophy = "🥇";
-  else if (rank === 2) trophy = "🥈";
-  else if (rank === 3) trophy = "🥉";
-
-  const rankText =
-    rank === ">20"
-      ? ">20"
-      : rank === 1
-        ? "1st"
-        : rank === 2
-          ? "2nd"
-          : rank === 3
-            ? "3rd"
-            : `${rank}th`;
-
-  if (isNewTopForPlayer) {
-    return `${trophy ? trophy + " " : ""}New Top Score - ${rankText} place!`;
-  } else {
-    return `New High Score - ${rankText} place!`;
-  }
-}
+// High score functions are accessed via getHighScoresModule() helper
 
 /**
  * Show high scores overlay
  */
 function showHighScores() {
-  const scores = getHighScores();
+  const scores = getHighScoresModule().getHighScores();
 
   // Re-query elements in case they weren't available at script load time
   const overlay = document.getElementById("high-scores-overlay");
@@ -1618,118 +1322,20 @@ function showHighScores() {
       if (index === 0) entry.classList.add("winner");
 
       // Format date
-      const date = new Date(score.timestamp);
-      const dateStr = date.toLocaleDateString(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
+      const dateStr = getUtils().formatDate(score.timestamp);
 
       // Trophy for top 3
-      let trophy = "";
-      if (index === 0) trophy = "🥇";
-      else if (index === 1) trophy = "🥈";
-      else if (index === 2) trophy = "🥉";
+      const trophy = getUtils().getTrophyEmoji(index + 1);
 
-      entry.innerHTML = `
-        <span class="player-name">${trophy ? trophy + " " : ""}${score.playerName}</span>
-        <div class="score-details">
-          <span>Stacks: ${score.faceCards}</span>
-          <span>Cards: ${score.totalCards}</span>
-          <span>6-7s: ${score.sixSevenCount}</span>
-          <span class="score-date">${dateStr}</span>
-        </div>
-      `;
+      entry.innerHTML = getUIHelpers().createScoreEntryHTML(score, trophy, dateStr);
       list.appendChild(entry);
     });
   }
 
   // Show overlay with fade-in
-  overlay.classList.remove("hidden");
-  overlay.classList.remove("fade-out");
-  requestAnimationFrame(() => {
-    overlay.style.opacity = "0";
-    overlay.style.transition = "opacity 0.5s ease";
-    requestAnimationFrame(() => {
-      overlay.style.opacity = "1";
-    });
-  });
+  getUIHelpers().animateOverlayFadeIn(overlay);
 }
 
-/**
- * Get nearby scores for display (3 above and 3 below, or lowest 3 + ellipsis + latest)
- */
-function getNearbyScores(allScores, newScoreTimestamp, isInTop20, newScoreObj) {
-  if (allScores.length === 0) {
-    // No saved scores, just show the new score
-    if (newScoreObj) {
-      return [
-        {
-          score: newScoreObj,
-          isNewScore: true,
-          displayIndex: 1,
-        },
-      ];
-    }
-    return [];
-  }
-
-  // Find the index of the new score in saved scores
-  const newScoreIndex = allScores.findIndex(
-    (s) => s.timestamp === newScoreTimestamp,
-  );
-
-  if (isInTop20 && newScoreIndex >= 0) {
-    // Show 3 above and 3 below the new score
-    const startIndex = Math.max(0, newScoreIndex - 3);
-    const endIndex = Math.min(allScores.length, newScoreIndex + 4); // +4 to include the new score and 3 below
-    return allScores.slice(startIndex, endIndex).map((score, idx) => ({
-      score,
-      isNewScore: score.timestamp === newScoreTimestamp,
-      displayIndex: startIndex + idx + 1, // 1-based rank
-    }));
-  } else {
-    // Show lowest 3 + ellipsis + latest (new score)
-    const lowest3 = allScores.slice(-3); // Last 3 (lowest scores)
-
-    // Check if new score is already in the lowest 3 (shouldn't happen if not in top 20, but check anyway)
-    const isInLowest3 = lowest3.some((s) => s.timestamp === newScoreTimestamp);
-
-    if (isInLowest3) {
-      // New score is already in the lowest 3, just show those
-      return lowest3.map((score, idx) => ({
-        score,
-        isNewScore: score.timestamp === newScoreTimestamp,
-        displayIndex: allScores.length - 3 + idx + 1,
-      }));
-    } else {
-      // Show lowest 3, ellipsis, and new score
-      const result = [
-        ...lowest3.map((score, idx) => ({
-          score,
-          isNewScore: false,
-          displayIndex: allScores.length - 3 + idx + 1,
-        })),
-      ];
-
-      // Only add ellipsis if there are more than 3 scores
-      if (allScores.length > 3) {
-        result.push({ isEllipsis: true });
-      }
-
-      // Add the new score
-      if (newScoreObj) {
-        result.push({
-          score: newScoreObj,
-          isNewScore: true,
-          displayIndex: ">20",
-        });
-      }
-
-      return result;
-    }
-  }
-}
 
 /**
  * Show game over overlay
@@ -1741,7 +1347,7 @@ function showGameOver() {
 
   if (isSolitaire) {
     // Solitaire mode: show high score message and nearby scores
-    const result = addHighScore(
+    const result = getHighScoresModule().addHighScore(
       winner.name,
       winner.faceCards,
       winner.totalCards,
@@ -1750,7 +1356,7 @@ function showGameOver() {
 
     let message;
     if (result.isInTop20) {
-      message = formatRankMessage(result.rank, result.isNewTopForPlayer);
+      message = getHighScoresModule().formatRankMessage(result.rank, result.isNewTopForPlayer);
     } else {
       message = "Good Game!";
     }
@@ -1758,8 +1364,8 @@ function showGameOver() {
     winnerName.textContent = message;
 
     // Display nearby scores
-    const allScores = getHighScores();
-    const nearbyScores = getNearbyScores(
+    const allScores = getHighScores().getHighScores();
+    const nearbyScores = getHighScoresModule().getNearbyScores(
       allScores,
       result.newScoreTimestamp,
       result.isInTop20,
@@ -1783,30 +1389,15 @@ function showGameOver() {
         }
 
         // Format date
-        const date = new Date(item.score.timestamp);
-        const dateStr = date.toLocaleDateString(undefined, {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        });
+        const dateStr = getUtils().formatDate(item.score.timestamp);
 
         // Trophy for top 3 (only if in top 20)
-        let trophy = "";
-        if (typeof item.displayIndex === "number") {
-          if (item.displayIndex === 1) trophy = "🥇";
-          else if (item.displayIndex === 2) trophy = "🥈";
-          else if (item.displayIndex === 3) trophy = "🥉";
-        }
+        const trophy =
+          typeof item.displayIndex === "number"
+            ? getUtils().getTrophyEmoji(item.displayIndex)
+            : "";
 
-        entry.innerHTML = `
-            <span class="player-name">${trophy ? trophy + " " : ""}${item.score.playerName}</span>
-            <div class="score-details">
-                <span>Stacks: ${item.score.faceCards}</span>
-                <span>Cards: ${item.score.totalCards}</span>
-                <span>6-7s: ${item.score.sixSevenCount}</span>
-                <span class="score-date">${dateStr}</span>
-            </div>
-        `;
+        entry.innerHTML = getUIHelpers().createScoreEntryHTML(item.score, trophy, dateStr);
         finalScores.appendChild(entry);
       }
     });
@@ -1820,29 +1411,13 @@ function showGameOver() {
       entry.className = "score-entry";
       if (index === 0) entry.classList.add("winner");
 
-      entry.innerHTML = `
-            <span class="player-name">${player.name}</span>
-            <div class="score-details">
-                <span>Stacks: ${player.faceCards}</span>
-                <span>Cards: ${player.totalCards}</span>
-                <span>6-7s: ${player.sixSevenCount}</span>
-            </div>
-        `;
+      entry.innerHTML = getUIHelpers().createScoreEntryHTML(player, "", "");
       finalScores.appendChild(entry);
     });
   }
 
   // Show as overlay with fade-in
-  gameoverOverlay.classList.remove("hidden");
-  gameoverOverlay.classList.remove("fade-out");
-  // Trigger fade-in animation
-  requestAnimationFrame(() => {
-    gameoverOverlay.style.opacity = "0";
-    gameoverOverlay.style.transition = "opacity 0.5s ease";
-    requestAnimationFrame(() => {
-      gameoverOverlay.style.opacity = "1";
-    });
-  });
+  getUIHelpers().animateOverlayFadeIn(gameoverOverlay);
 }
 
 /**
@@ -1850,20 +1425,24 @@ function showGameOver() {
  */
 function createGameLogo() {
   if (!gameLogo) return;
-
+  
   // 6 of Hearts (CCW rotated)
-  const card6 = createCardElement({ rank: "6", suit: "hearts" }, "large");
-  card6.classList.add("logo-card", "logo-card-6");
-  card6.style.width = "150px";
-  card6.style.height = "210px";
-  gameLogo.appendChild(card6);
+  const card6 = getRendering().createCardElement({ rank: "6", suit: "hearts" }, "large");
+  if (card6) {
+    card6.classList.add("logo-card", "logo-card-6");
+    card6.style.width = "150px";
+    card6.style.height = "210px";
+    gameLogo.appendChild(card6);
+  }
 
   // 7 of Spades (CW rotated, on top)
-  const card7 = createCardElement({ rank: "7", suit: "spades" }, "large");
-  card7.classList.add("logo-card", "logo-card-7");
-  card7.style.width = "150px";
-  card7.style.height = "210px";
-  gameLogo.appendChild(card7);
+  const card7 = getRendering().createCardElement({ rank: "7", suit: "spades" }, "large");
+  if (card7) {
+    card7.classList.add("logo-card", "logo-card-7");
+    card7.style.width = "150px";
+    card7.style.height = "210px";
+    gameLogo.appendChild(card7);
+  }
 }
 
 /**
@@ -2068,15 +1647,6 @@ const SCENARIOS = {
   },
 };
 
-// Export rendering functions for tutorial use
-window.TutorialRendering = {
-  createCardElement,
-  createCardBackElement,
-  createDeckStack,
-  getCardId,
-  SUIT_NAMES,
-  PLAYER_COLORS,
-};
 
 // Initialize on load
 document.addEventListener("DOMContentLoaded", () => {

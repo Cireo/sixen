@@ -179,7 +179,7 @@ class TutorialGame {
 
     // Render drawn card if present
     if (state.drawnCard) {
-      const cardEl = window.TutorialRendering.createCardElement(
+      const cardEl = window.Rendering.createCardElement(
         state.drawnCard,
       );
       this.drawnCardArea.appendChild(cardEl);
@@ -278,7 +278,7 @@ class TutorialGame {
     const faceArea = document.createElement("div");
     faceArea.className = "stack-face";
     faceArea.appendChild(
-      window.TutorialRendering.createCardElement(stack.face),
+      window.Rendering.createCardElement(stack.face),
     );
     stackEl.appendChild(faceArea);
 
@@ -307,7 +307,7 @@ class TutorialGame {
 
       if (stack.left[i]) {
         leftSlot.classList.add("filled");
-        const cardEl = window.TutorialRendering.createCardElement(
+        const cardEl = window.Rendering.createCardElement(
           stack.left[i],
         );
         leftSlot.appendChild(cardEl);
@@ -333,7 +333,7 @@ class TutorialGame {
 
       if (stack.right[i]) {
         rightSlot.classList.add("filled");
-        const cardEl = window.TutorialRendering.createCardElement(
+        const cardEl = window.Rendering.createCardElement(
           stack.right[i],
         );
         rightSlot.appendChild(cardEl);
@@ -368,7 +368,7 @@ class TutorialGame {
       if (stack.matchSlot) {
         matchSlot.classList.add("filled");
         matchSlot.appendChild(
-          window.TutorialRendering.createCardElement(stack.matchSlot),
+          window.Rendering.createCardElement(stack.matchSlot),
         );
       } else if (allowedStackPlays.some((p) => p.side === "match")) {
         matchSlot.classList.add("clickable");
@@ -397,14 +397,15 @@ class TutorialGame {
     return stackEl;
   }
 
-  handlePlayCard(stackIndex, side) {
+  handlePlayCard(stackIndex, side, callback) {
     // Check if move is allowed (only check during manual play, not auto-play)
     if (!this.isAutoPlaying && this.allowedMoves.length > 0) {
       const isAllowed = this.allowedMoves.some(
         (m) => m.stackIndex === stackIndex && m.side === side,
       );
       if (!isAllowed) {
-        return; // Move not allowed
+        if (callback) callback(false);
+        return false; // Move not allowed
       }
     }
 
@@ -412,7 +413,8 @@ class TutorialGame {
 
     if (!result.success) {
       console.error("Play failed:", result.error);
-      return;
+      if (callback) callback(false);
+      return false;
     }
 
     // Render the card in place first
@@ -431,6 +433,7 @@ class TutorialGame {
           this.game.collectStack(stackIndex, condition.type);
           this.game.nextTurn();
           this.render();
+          if (callback) callback(true);
         });
       }, 800);
     } else {
@@ -440,8 +443,11 @@ class TutorialGame {
         this.showSumMessage(newSum);
         this.game.nextTurn();
         this.render();
+        if (callback) callback(true);
       }, 800);
     }
+    
+    return true; // Play was successful (async operations will complete later)
   }
 
   reset() {
@@ -482,18 +488,24 @@ class TutorialGame {
       return;
     }
 
-    // Execute the play
-    this.handlePlayCard(step.stackIndex, step.side);
+    // Execute the play with callback to continue after play completes
+    this.handlePlayCard(step.stackIndex, step.side, (success) => {
+      if (!success) {
+        // Play failed, stop auto-play
+        this.isAutoPlaying = false;
+        return;
+      }
 
-    // Move to next step
-    this.autoPlayIndex++;
-    if (this.autoPlayIndex < this.autoPlaySteps.length) {
-      setTimeout(() => {
-        this.executeAutoPlayStep();
-      }, this.autoPlayDelay);
-    } else {
-      this.isAutoPlaying = false;
-    }
+      // Move to next step after play completes
+      this.autoPlayIndex++;
+      if (this.autoPlayIndex < this.autoPlaySteps.length) {
+        setTimeout(() => {
+          this.executeAutoPlayStep();
+        }, this.autoPlayDelay);
+      } else {
+        this.isAutoPlaying = false;
+      }
+    });
   }
 
   showMessage(text, callback) {

@@ -127,10 +127,7 @@ function createGameFromScenario(scenario) {
         window.createCard(c.rank, c.suit),
       );
       stack.matchSlot = stackData.matchSlot
-        ? window.createCard(
-            stackData.matchSlot.rank,
-            stackData.matchSlot.suit,
-          )
+        ? window.createCard(stackData.matchSlot.rank, stackData.matchSlot.suit)
         : null;
       return stack;
     });
@@ -289,4 +286,3 @@ if (typeof module !== "undefined" && module.exports) {
     runTutorialTests,
   };
 }
-

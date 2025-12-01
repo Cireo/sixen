@@ -104,14 +104,20 @@ class TutorialGame {
     const gameBoard = document.createElement("div");
     gameBoard.className = "tutorial-game-board";
 
-    // Create controls
+    // Create controls (only show reset button if there are moves or auto-play)
     const controls = document.createElement("div");
     controls.className = "tutorial-game-controls";
-    const resetBtn = document.createElement("button");
-    resetBtn.className = "btn btn-small tutorial-reset-btn";
-    resetBtn.textContent = "Reset";
-    resetBtn.addEventListener("click", () => this.reset());
-    controls.appendChild(resetBtn);
+    const hasInteractivity =
+      (this.allowedMoves && this.allowedMoves.length > 0) ||
+      (this.autoPlaySteps && this.autoPlaySteps.length > 0) ||
+      this.autoPlay;
+    if (hasInteractivity) {
+      const resetBtn = document.createElement("button");
+      resetBtn.className = "btn btn-small tutorial-reset-btn";
+      resetBtn.textContent = "Reset";
+      resetBtn.addEventListener("click", () => this.reset());
+      controls.appendChild(resetBtn);
+    }
 
     // Create stacks container
     const stacksContainer = document.createElement("div");
@@ -155,11 +161,14 @@ class TutorialGame {
     this.stacksContainer.innerHTML = "";
     this.drawnCardArea.innerHTML = "";
 
-    // Check if this is an endgame scenario with no visual content
-    if ((!state.stacks || state.stacks.length === 0) && !state.drawnCard) {
+    // Check if this is an endgame scenario with no visual content (only if endGameMessage is explicitly set)
+    if (
+      this.endGameMessage &&
+      (!state.stacks || state.stacks.length === 0) &&
+      !state.drawnCard
+    ) {
       // Show message if no stacks and no card
-      const message = this.endGameMessage || "No stacks remain - game ends";
-      this.messageArea.textContent = message;
+      this.messageArea.textContent = this.endGameMessage;
       this.messageArea.classList.remove("hidden");
       this.messageArea.classList.add("show");
       return;
@@ -180,7 +189,11 @@ class TutorialGame {
     }
 
     // Render player info
-    if (state.players && state.players.length > 0 && state.currentPlayerIndex !== undefined) {
+    if (
+      state.players &&
+      state.players.length > 0 &&
+      state.currentPlayerIndex !== undefined
+    ) {
       const currentPlayer = state.players[state.currentPlayerIndex];
       if (currentPlayer) {
         this.playerArea.innerHTML = `
@@ -205,10 +218,16 @@ class TutorialGame {
       });
     }
 
-    // If number deck is empty and no drawn card, show message
-    if (state.numberDeck && state.numberDeck.length === 0 && !state.drawnCard && state.stacks && state.stacks.length > 0) {
-      const message = this.endGameMessage || "Number deck is empty - game ends";
-      this.messageArea.textContent = message;
+    // If number deck is empty and no drawn card, show message (only if endGameMessage is explicitly set)
+    if (
+      this.endGameMessage &&
+      state.numberDeck &&
+      state.numberDeck.length === 0 &&
+      !state.drawnCard &&
+      state.stacks &&
+      state.stacks.length > 0
+    ) {
+      this.messageArea.textContent = this.endGameMessage;
       this.messageArea.classList.remove("hidden");
       this.messageArea.classList.add("show");
     }
@@ -401,9 +420,9 @@ class TutorialGame {
 
     // Handle collection
     if (result.collectionConditions.length > 0) {
-      const condition = result.collectionConditions.find(
-        (c) => c.type === "six-seven",
-      ) || result.collectionConditions[0];
+      const condition =
+        result.collectionConditions.find((c) => c.type === "six-seven") ||
+        result.collectionConditions[0];
 
       // Wait a moment to show the card in place, then show collection message
       setTimeout(() => {
@@ -446,7 +465,10 @@ class TutorialGame {
   }
 
   executeAutoPlayStep() {
-    if (!this.isAutoPlaying || this.autoPlayIndex >= this.autoPlaySteps.length) {
+    if (
+      !this.isAutoPlaying ||
+      this.autoPlayIndex >= this.autoPlaySteps.length
+    ) {
       this.isAutoPlaying = false;
       return;
     }
@@ -705,4 +727,3 @@ if (document.readyState === "loading") {
 } else {
   initializeTutorial();
 }
-

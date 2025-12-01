@@ -129,7 +129,7 @@ function initEventListeners() {
     // Only handle D key, and only if not typing in an input field
     if ((e.key === "d" || e.key === "D") && e.target.tagName !== "INPUT") {
       e.preventDefault(); // Prevent any default behavior
-      
+
       // Only draw if game is active and we're on the game screen
       if (game && !gameScreen.classList.contains("hidden")) {
         const state = game.getState();
@@ -336,9 +336,10 @@ function renderGame() {
   // Game over checks
   if (
     state.gameOver ||
-    (state.stuckPlayer !== null && state.currentPlayerIndex === state.stuckPlayer) ||
+    (state.stuckPlayer !== null &&
+      state.currentPlayerIndex === state.stuckPlayer) ||
     (state.numberDeckCount === 0 && !state.drawnCard) ||
-    (state.stacks.length === 0)
+    state.stacks.length === 0
   ) {
     game.gameOver = true;
     showGameOver();
@@ -346,7 +347,11 @@ function renderGame() {
   }
 
   // Check if there are no possible moves (all stacks full and >10, no face deck)
-  if (state.stacks.length > 0 && state.faceDeckCount === 0 && !state.drawnCard) {
+  if (
+    state.stacks.length > 0 &&
+    state.faceDeckCount === 0 &&
+    !state.drawnCard
+  ) {
     // Check if any card from the number deck can be played
     let hasPossibleMove = false;
     // We can't check all cards without drawing, but we can check if all stacks are unplayable
@@ -366,7 +371,12 @@ function renderGame() {
   }
 
   // Auto-draw if enabled and no card is drawn
-  if (autoDraw && !state.drawnCard && state.numberDeckCount > 0 && !isProcessing) {
+  if (
+    autoDraw &&
+    !state.drawnCard &&
+    state.numberDeckCount > 0 &&
+    !isProcessing
+  ) {
     // Small delay to allow render to complete
     setTimeout(() => {
       handleDrawCard();
@@ -555,8 +565,9 @@ function updatePlayerDecks(state) {
     if (!deckWrapper || !deckEl || !deckDisplay) return;
 
     // Check if this player is stuck (has a stuckCard stored)
-    const playerHasStuckCard = player.stuckCard !== null && player.stuckCard !== undefined;
-    
+    const playerHasStuckCard =
+      player.stuckCard !== null && player.stuckCard !== undefined;
+
     // Show deck for current player OR stuck players with cards
     if (isCurrentPlayer || playerHasStuckCard) {
       if (isCurrentPlayer) {
@@ -728,11 +739,11 @@ function renderStacksInternal(state) {
       const leftSlot = document.createElement("div");
       leftSlot.className = "card-slot left-slot";
       const isNextLeftSlot = i === stack.left.length;
-      
+
       // Apply horizontal offset to ALL slots (filled, clickable, and empty)
       const offset = getHorizontalOffset(i, capacity);
       leftSlot.style.transform = `translateX(${offset}px)`;
-      
+
       if (stack.left[i]) {
         leftSlot.classList.add("filled");
         const cardEl = createCardElement(stack.left[i]);
@@ -754,11 +765,11 @@ function renderStacksInternal(state) {
       const rightSlot = document.createElement("div");
       rightSlot.className = "card-slot right-slot";
       const isNextRightSlot = i === stack.right.length;
-      
+
       // Apply horizontal offset to ALL slots (filled, clickable, and empty)
       const rightOffset = getHorizontalOffset(i, capacity);
       rightSlot.style.transform = `translateX(${rightOffset}px)`;
-      
+
       if (stack.right[i]) {
         rightSlot.classList.add("filled");
         const cardEl = createCardElement(stack.right[i]);
@@ -893,7 +904,7 @@ function handleDrawCard() {
   if (legalPlays.length === 0) {
     // No legal plays available
     renderGame(); // Show the drawn card
-    
+
     const result = game.handleNoLegalPlay();
 
     if (result.createNewStack) {
@@ -934,7 +945,7 @@ function handleDrawCard() {
       const state = game.getState();
       const isSolitaire = state.players.length === 1;
       const isAlreadyLastRound = state.stuckPlayer !== null;
-      
+
       let message;
       if (isSolitaire) {
         message = "No more moves!";
@@ -945,7 +956,7 @@ function handleDrawCard() {
         // First player to get stuck - starting last round
         message = "No available moves, last round!";
       }
-      
+
       setTimeout(() => {
         showAnnouncement(message, null, 1500);
         setTimeout(() => {
@@ -1143,7 +1154,11 @@ function addHighScore(playerName, faceCards, totalCards, sixSevenCount) {
   };
 
   // Check if this is the player's personal best BEFORE adding to list
-  const isNewTopForPlayer = isNewTopScoreForPlayer(playerName, newScore, scores);
+  const isNewTopForPlayer = isNewTopScoreForPlayer(
+    playerName,
+    newScore,
+    scores,
+  );
 
   // Add new score
   scores.push(newScore);
@@ -1183,7 +1198,7 @@ function addHighScore(playerName, faceCards, totalCards, sixSevenCount) {
 function isNewTopScoreForPlayer(playerName, newScore, allScores) {
   // Get all scores for this player name
   const playerScores = allScores.filter((s) => s.playerName === playerName);
-  
+
   // If player has no previous scores, this is their top score
   if (playerScores.length === 0) return true;
 
@@ -1230,7 +1245,15 @@ function formatRankMessage(rank, isNewTopForPlayer) {
   else if (rank === 3) trophy = "🥉";
 
   const rankText =
-    rank === ">20" ? ">20" : rank === 1 ? "1st" : rank === 2 ? "2nd" : rank === 3 ? "3rd" : `${rank}th`;
+    rank === ">20"
+      ? ">20"
+      : rank === 1
+        ? "1st"
+        : rank === 2
+          ? "2nd"
+          : rank === 3
+            ? "3rd"
+            : `${rank}th`;
 
   if (isNewTopForPlayer) {
     return `${trophy ? trophy + " " : ""}New Top Score - ${rankText} place!`;
@@ -1244,11 +1267,11 @@ function formatRankMessage(rank, isNewTopForPlayer) {
  */
 function showHighScores() {
   const scores = getHighScores();
-  
+
   // Re-query elements in case they weren't available at script load time
   const overlay = document.getElementById("high-scores-overlay");
   const list = document.getElementById("high-scores-list");
-  
+
   if (!list || !overlay) {
     console.error("High scores overlay elements not found");
     return;
@@ -1257,7 +1280,8 @@ function showHighScores() {
   list.innerHTML = "";
 
   if (scores.length === 0) {
-    list.innerHTML = '<div class="score-entry"><p>No high scores yet!</p></div>';
+    list.innerHTML =
+      '<div class="score-entry"><p>No high scores yet!</p></div>';
   } else {
     scores.forEach((score, index) => {
       const entry = document.createElement("div");
@@ -1267,9 +1291,9 @@ function showHighScores() {
       // Format date
       const date = new Date(score.timestamp);
       const dateStr = date.toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
+        year: "numeric",
+        month: "short",
+        day: "numeric",
       });
 
       // Trophy for top 3

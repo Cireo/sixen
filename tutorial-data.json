@@ -69,14 +69,24 @@
               },
               {
                 "face": { "rank": "Q", "suit": "spades" },
-                "left": [{ "rank": "3", "suit": "hearts" }, { "rank": "2", "suit": "clubs" }],
+                "left": [
+                  { "rank": "3", "suit": "hearts" },
+                  { "rank": "2", "suit": "clubs" }
+                ],
                 "right": [{ "rank": "1", "suit": "diamonds" }],
                 "matchSlot": null
               },
               {
                 "face": { "rank": "K", "suit": "diamonds" },
-                "left": [{ "rank": "4", "suit": "hearts" }, { "rank": "2", "suit": "spades" }, { "rank": "1", "suit": "clubs" }],
-                "right": [{ "rank": "3", "suit": "diamonds" }, { "rank": "2", "suit": "hearts" }],
+                "left": [
+                  { "rank": "4", "suit": "hearts" },
+                  { "rank": "2", "suit": "spades" },
+                  { "rank": "1", "suit": "clubs" }
+                ],
+                "right": [
+                  { "rank": "3", "suit": "diamonds" },
+                  { "rank": "2", "suit": "hearts" }
+                ],
                 "matchSlot": null
               }
             ],
@@ -153,9 +163,7 @@
           },
           "allowedMoves": [{ "stackIndex": 0, "side": "left" }],
           "autoPlay": true,
-          "autoPlaySteps": [
-            { "stackIndex": 0, "side": "left" }
-          ]
+          "autoPlaySteps": [{ "stackIndex": 0, "side": "left" }]
         },
         {
           "id": "seven-seven-example",
@@ -179,9 +187,7 @@
           },
           "allowedMoves": [{ "stackIndex": 0, "side": "left" }],
           "autoPlay": true,
-          "autoPlaySteps": [
-            { "stackIndex": 0, "side": "left" }
-          ]
+          "autoPlaySteps": [{ "stackIndex": 0, "side": "left" }]
         },
         {
           "id": "six-seven-example",
@@ -205,9 +211,7 @@
           },
           "allowedMoves": [{ "stackIndex": 0, "side": "left" }],
           "autoPlay": true,
-          "autoPlaySteps": [
-            { "stackIndex": 0, "side": "left" }
-          ]
+          "autoPlaySteps": [{ "stackIndex": 0, "side": "left" }]
         },
         {
           "id": "six-seven-other-side-example",
@@ -231,9 +235,7 @@
           },
           "allowedMoves": [{ "stackIndex": 0, "side": "left" }],
           "autoPlay": true,
-          "autoPlaySteps": [
-            { "stackIndex": 0, "side": "left" }
-          ]
+          "autoPlaySteps": [{ "stackIndex": 0, "side": "left" }]
         },
         {
           "id": "six-seven-no-collection-underneath-example",
@@ -244,7 +246,10 @@
             "stacks": [
               {
                 "face": { "rank": "Q", "suit": "diamonds" },
-                "left": [{ "rank": "6", "suit": "hearts" }, { "rank": "3", "suit": "clubs" }],
+                "left": [
+                  { "rank": "6", "suit": "hearts" },
+                  { "rank": "3", "suit": "clubs" }
+                ],
                 "right": [],
                 "matchSlot": null
               }
@@ -257,9 +262,7 @@
           },
           "allowedMoves": [{ "stackIndex": 0, "side": "left" }],
           "autoPlay": true,
-          "autoPlaySteps": [
-            { "stackIndex": 0, "side": "left" }
-          ]
+          "autoPlaySteps": [{ "stackIndex": 0, "side": "left" }]
         },
         {
           "id": "zero-example",
@@ -283,9 +286,7 @@
           },
           "allowedMoves": [{ "stackIndex": 0, "side": "right" }],
           "autoPlay": true,
-          "autoPlaySteps": [
-            { "stackIndex": 0, "side": "right" }
-          ]
+          "autoPlaySteps": [{ "stackIndex": 0, "side": "right" }]
         },
         {
           "id": "match-example",
@@ -309,9 +310,7 @@
           },
           "allowedMoves": [{ "stackIndex": 0, "side": "match" }],
           "autoPlay": true,
-          "autoPlaySteps": [
-            { "stackIndex": 0, "side": "match" }
-          ]
+          "autoPlaySteps": [{ "stackIndex": 0, "side": "match" }]
         }
       ]
     },
@@ -397,8 +396,16 @@
             "stacks": [
               {
                 "face": { "rank": "K", "suit": "hearts" },
-                "left": [{ "rank": "10", "suit": "spades" }, { "rank": "5", "suit": "diamonds" }, { "rank": "2", "suit": "clubs" }],
-                "right": [{ "rank": "3", "suit": "hearts" }, { "rank": "2", "suit": "spades" }, { "rank": "1", "suit": "diamonds" }],
+                "left": [
+                  { "rank": "10", "suit": "spades" },
+                  { "rank": "5", "suit": "diamonds" },
+                  { "rank": "2", "suit": "clubs" }
+                ],
+                "right": [
+                  { "rank": "3", "suit": "hearts" },
+                  { "rank": "2", "suit": "spades" },
+                  { "rank": "1", "suit": "diamonds" }
+                ],
                 "matchSlot": null
               }
             ],
@@ -422,4 +429,3 @@
     }
   ]
 }
-

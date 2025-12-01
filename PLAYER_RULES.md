@@ -76,7 +76,7 @@ After playing a Number card, you may immediately **Collect** that Stack (take th
 ### Hybrid collection
 
 - **Six-Seven:** You played a **7** on a Stack where the most recent visible card (the top card) on that side is a **6**, or where the top card on the opposite side is a **6**.
-  - The resulting sum does *not* matter; only that the play was playable.
+  - The resulting sum does _not_ matter; only that the play was playable.
   - Announce `Six Seven`.
 
 ### Zero collections

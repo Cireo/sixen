@@ -41,6 +41,7 @@ let shouldAnimateNewStack = false; // Track if we should animate a new stack
 let autoPlayNewStacks = false; // Game option: auto-play on new stacks
 let autoDraw = false; // Game option: always automatically draw
 let showStackSum = true; // Game option: show stack sum display
+let allowIllegalSumMoves = false; // Game option: allow clicking illegal sum moves (reject on click)
 let debugMode = false; // Debug mode flag
 let isProcessing = false; // Prevent drawing during animations/processing
 
@@ -141,6 +142,29 @@ function initEventListeners() {
       }
     }
   });
+
+  // Game option checkboxes
+  const showStackSumCheckbox = document.getElementById("show-stack-sum");
+  if (showStackSumCheckbox) {
+    showStackSumCheckbox.addEventListener("change", (e) => {
+      showStackSum = e.target.checked;
+      // Re-render game to apply the change immediately if game is active
+      if (game && !gameScreen.classList.contains("hidden")) {
+        renderGame();
+      }
+    });
+  }
+
+  const allowIllegalSumCheckbox = document.getElementById("allow-illegal-sum-moves");
+  if (allowIllegalSumCheckbox) {
+    allowIllegalSumCheckbox.addEventListener("change", (e) => {
+      allowIllegalSumMoves = e.target.checked;
+      // Re-render game to apply the change immediately if game is active
+      if (game && !gameScreen.classList.contains("hidden")) {
+        renderGame();
+      }
+    });
+  }
 }
 
 /**
@@ -199,6 +223,8 @@ function startGame() {
   autoDraw = autoDrawCheckbox ? autoDrawCheckbox.checked : false;
   const showSumCheckbox = document.getElementById("show-stack-sum");
   showStackSum = showSumCheckbox ? showSumCheckbox.checked : true;
+  const allowIllegalSumCheckbox = document.getElementById("allow-illegal-sum-moves");
+  allowIllegalSumMoves = allowIllegalSumCheckbox ? allowIllegalSumCheckbox.checked : false;
 
   game = new SixSevenGame(names);
   pendingCollection = null;
@@ -753,14 +779,18 @@ function renderStacksInternal(state) {
         leftSlot.appendChild(cardEl);
         // Higher z-index for later cards (so they're on top)
         leftSlot.style.zIndex = 10 + i;
-      } else if (isNextLeftSlot && stackPlays.some((p) => p.side === "left")) {
-        // This is the next available left slot and it's a legal play
-        leftSlot.classList.add("clickable");
-        // Clickable slots get highest z-index
-        leftSlot.style.zIndex = 100;
-        leftSlot.addEventListener("click", () =>
-          handlePlayCard(stackIndex, "left"),
-        );
+      } else if (isNextLeftSlot) {
+        // Check if this is a legal play or if we should show it anyway (illegal sum moves option)
+        const isLegalPlay = stackPlays.some((p) => p.side === "left");
+        const shouldShow = isLegalPlay || (allowIllegalSumMoves && state.drawnCard);
+        if (shouldShow) {
+          leftSlot.classList.add("clickable");
+          // Clickable slots get highest z-index
+          leftSlot.style.zIndex = 100;
+          leftSlot.addEventListener("click", () =>
+            handlePlayCard(stackIndex, "left"),
+          );
+        }
       }
       row.appendChild(leftSlot);
 
@@ -779,17 +809,18 @@ function renderStacksInternal(state) {
         rightSlot.appendChild(cardEl);
         // Higher z-index for later cards (so they're on top)
         rightSlot.style.zIndex = 10 + i;
-      } else if (
-        isNextRightSlot &&
-        stackPlays.some((p) => p.side === "right")
-      ) {
-        // This is the next available right slot and it's a legal play
-        rightSlot.classList.add("clickable");
-        // Clickable slots get highest z-index
-        rightSlot.style.zIndex = 100;
-        rightSlot.addEventListener("click", () =>
-          handlePlayCard(stackIndex, "right"),
-        );
+      } else if (isNextRightSlot) {
+        // Check if this is a legal play or if we should show it anyway (illegal sum moves option)
+        const isLegalPlay = stackPlays.some((p) => p.side === "right");
+        const shouldShow = isLegalPlay || (allowIllegalSumMoves && state.drawnCard);
+        if (shouldShow) {
+          rightSlot.classList.add("clickable");
+          // Clickable slots get highest z-index
+          rightSlot.style.zIndex = 100;
+          rightSlot.addEventListener("click", () =>
+            handlePlayCard(stackIndex, "right"),
+          );
+        }
       }
       row.appendChild(rightSlot);
 
@@ -980,6 +1011,39 @@ function handleDrawCard() {
  * Handle playing a card
  */
 function handlePlayCard(stackIndex, side) {
+  // Check if this is an illegal sum move before executing (if option is enabled)
+  if (allowIllegalSumMoves) {
+    const state = game.getState();
+    if (state.drawnCard) {
+      const stack = state.stacks[stackIndex];
+      const cardValue = window.getCardValue(state.drawnCard);
+      const currentSum = window.calculateStackSum(stack);
+      
+      let wouldBeIllegalBySum = false;
+      if (side === "left") {
+        // Check if left side is full first
+        const isLeftFull = stack.left.length >= window.getStackCapacity(stack);
+        if (!isLeftFull) {
+          const newSum = currentSum + cardValue;
+          wouldBeIllegalBySum = newSum < 0;
+        }
+      } else if (side === "right") {
+        // Check if right side is full first
+        const isRightFull = stack.right.length >= window.getStackCapacity(stack);
+        if (!isRightFull) {
+          const newSum = currentSum - cardValue;
+          wouldBeIllegalBySum = newSum < 0;
+        }
+      }
+      
+      if (wouldBeIllegalBySum) {
+        // Show error message for illegal sum move
+        showAnnouncement("Cannot reduce stack sum below zero!", null, 2000);
+        return;
+      }
+    }
+  }
+
   const result = game.executePlay(stackIndex, side);
 
   if (!result.success) {

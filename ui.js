@@ -905,8 +905,9 @@ function renderStacksInternal(state) {
     if (wasAdding && stackIndex === currentStackCount - 1) {
       const faceDeckEl = document.getElementById("face-deck-display");
       if (faceDeckEl) {
+        // Use a smooth easing function for consistent animation
         stackEl.style.transition =
-          "transform 0.5s ease-out, opacity 0.5s ease-out";
+          "transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1)";
         stackEl.style.opacity = "0";
 
         // Calculate position from face deck to stack position
@@ -922,13 +923,14 @@ function renderStacksInternal(state) {
             faceDeckRect.height / 2 -
             (stackRect.top + stackRect.height / 2);
 
-          stackEl.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
-
-          // Trigger animation after a brief delay
-          setTimeout(() => {
-            stackEl.style.transform = "translate(0, 0)";
-            stackEl.style.opacity = "1";
-          }, 50);
+          // Set initial position and trigger animation in next frame for smooth start
+          requestAnimationFrame(() => {
+            stackEl.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+            requestAnimationFrame(() => {
+              stackEl.style.transform = "translate(0, 0)";
+              stackEl.style.opacity = "1";
+            });
+          });
         });
       }
     }
@@ -947,7 +949,7 @@ function renderStacksInternal(state) {
           stackEl.style.opacity = "";
         }
       });
-    }, 550);
+    }, 650); // Increased to match new animation duration (600ms + small buffer)
   }
 }
 
@@ -1188,13 +1190,22 @@ function handlePlayCard(stackIndex, side) {
             pendingCollection.stackIndex,
             pendingCollection.type,
           );
-          const newStackCount = game.getState().stacks.length;
+          const newState = game.getState();
+          const newStackCount = newState.stacks.length;
           // If a new stack was created (one removed, one added), animate it
           shouldAnimateNewStack = newStackCount === oldStackCount;
           pendingCollection = null;
           isProcessing = false; // Unlock drawing after animation completes
           clearNoValidMovesTimer();
           stopFaceDeckShaking();
+          
+          // Check if game should end (no stacks and no face cards)
+          if (newStackCount === 0 && newState.faceDeckCount === 0) {
+            game.gameOver = true;
+            showGameOver();
+            return;
+          }
+          
           game.nextTurn();
           renderGame();
         }, 300); // Match fade-out animation duration
@@ -1364,7 +1375,7 @@ function showGameOver() {
     winnerName.textContent = message;
 
     // Display nearby scores
-    const allScores = getHighScores().getHighScores();
+    const allScores = getHighScoresModule().getHighScores();
     const nearbyScores = getHighScoresModule().getNearbyScores(
       allScores,
       result.newScoreTimestamp,

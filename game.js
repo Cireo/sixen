@@ -485,7 +485,7 @@ class SixSevenGame {
 
     if (this.faceDeck.length > 0) {
       const newFace = this.faceDeck.pop();
-      this.stacks.push(createStack(newFace));
+      this.stacks.unshift(createStack(newFace)); // Add to beginning (left side)
     }
 
     return true;
@@ -500,10 +500,10 @@ class SixSevenGame {
       // Create new stack and play card there
       const newFace = this.faceDeck.pop();
       const newStack = createStack(newFace);
-      this.stacks.push(newStack);
+      this.stacks.unshift(newStack); // Add to beginning (left side)
 
       // Card must be playable on empty stack (left side always works for positive sum)
-      const newStackIndex = this.stacks.length - 1;
+      const newStackIndex = 0; // New stack is always at index 0 when added to beginning
 
       return {
         createNewStack: true,

@@ -902,14 +902,10 @@ function renderStacksInternal(state) {
     stacksContainer.appendChild(stackEl);
 
     // Animate new stacks sliding in from face deck
-    if (wasAdding && stackIndex === currentStackCount - 1) {
+    // New stacks are added at the beginning (index 0) to avoid passing through other stacks
+    if (wasAdding && stackIndex === 0) {
       const faceDeckEl = document.getElementById("face-deck-display");
       if (faceDeckEl) {
-        // Use a smooth easing function for consistent animation
-        stackEl.style.transition =
-          "transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1)";
-        stackEl.style.opacity = "0";
-
         // Calculate position from face deck to stack position
         requestAnimationFrame(() => {
           const faceDeckRect = faceDeckEl.getBoundingClientRect();
@@ -923,12 +919,27 @@ function renderStacksInternal(state) {
             faceDeckRect.height / 2 -
             (stackRect.top + stackRect.height / 2);
 
-          // Set initial position and trigger animation in next frame for smooth start
+          // Set initial position WITHOUT transition (so it's instant)
+          stackEl.style.transition = "none";
+          stackEl.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+          stackEl.style.opacity = "0";
+          
+          // Force a reflow to ensure initial transform is applied
+          void stackEl.offsetHeight;
+          
+          // Use double requestAnimationFrame for smooth animation start
           requestAnimationFrame(() => {
-            stackEl.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
             requestAnimationFrame(() => {
-              stackEl.style.transform = "translate(0, 0)";
-              stackEl.style.opacity = "1";
+              // NOW set the transition and animate to final position
+              // Use a smooth easing function for consistent animation
+              stackEl.style.transition =
+                "transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1)";
+              
+              // Trigger animation in next frame
+              requestAnimationFrame(() => {
+                stackEl.style.transform = "translate(0, 0)";
+                stackEl.style.opacity = "1";
+              });
             });
           });
         });
@@ -949,7 +960,7 @@ function renderStacksInternal(state) {
           stackEl.style.opacity = "";
         }
       });
-    }, 650); // Increased to match new animation duration (600ms + small buffer)
+    }, 650); // Match animation duration (600ms + small buffer)
   }
 }
 
@@ -1198,14 +1209,14 @@ function handlePlayCard(stackIndex, side) {
           isProcessing = false; // Unlock drawing after animation completes
           clearNoValidMovesTimer();
           stopFaceDeckShaking();
-          
+
           // Check if game should end (no stacks and no face cards)
           if (newStackCount === 0 && newState.faceDeckCount === 0) {
             game.gameOver = true;
             showGameOver();
             return;
           }
-          
+
           game.nextTurn();
           renderGame();
         }, 300); // Match fade-out animation duration
@@ -1436,7 +1447,7 @@ function showGameOver() {
  */
 function createGameLogo() {
   if (!gameLogo) return;
-  
+
   // 6 of Hearts (CCW rotated)
   const card6 = getRendering().createCardElement({ rank: "6", suit: "hearts" }, "large");
   if (card6) {

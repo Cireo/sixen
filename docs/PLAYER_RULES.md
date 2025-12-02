@@ -122,7 +122,7 @@ The game ends when:
 
 ---
 
-## Quick examples (`sixseven` blocks)
+## Quick examples (`sixen` blocks)
 
 ```sixen
 stacks:
@@ -149,7 +149,7 @@ steps:
 - Compute sum = sum(plus) - sum(minus) after each play.
 - Enforce per-face capacity rules.
 - Visual layouts may stack cards to show only the newest card fully, but logic always uses full lists.
-- For digital versions, sixseven blocks can drive visuals or animations.
+- For digital versions, sixen blocks can drive visuals or animations.
 
 ## Sketches for a later detailed version
 

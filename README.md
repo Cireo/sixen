@@ -71,7 +71,7 @@ For detailed rules, see [Player Rules](docs/PLAYER_RULES.md) or [Formal Rules](d
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/sixen.git
+   git clone https://github.com/Cireo/sixen.git
    cd sixen
    ```
 
@@ -113,6 +113,10 @@ sixen/
 ├── LICENSE                 # MIT License
 ├── README.md               # This file
 ├── DEPLOYMENT.md           # GitHub Pages deployment guide
+├── .nojekyll               # Disable Jekyll processing for GitHub Pages
+├── .github/
+│   └── workflows/
+│       └── deploy.yml      # GitHub Actions deployment workflow
 ├── src/
 │   ├── js/
 │   │   ├── game.js         # Core game logic
@@ -177,6 +181,8 @@ This game is ready to be deployed to GitHub Pages as a single-page web applicati
 
 After deployment, your app will be available at:
 `https://[username].github.io/[repository-name]/`
+
+For example: `https://cireo.github.io/sixen/`
 
 ## 🤝 Contributing
 

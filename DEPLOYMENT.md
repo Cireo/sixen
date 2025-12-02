@@ -8,9 +8,8 @@ This Sixen card game is ready to be deployed to GitHub Pages as a single-page we
 2. **Enable GitHub Pages**: 
    - Go to your repository settings
    - Navigate to "Pages" in the left sidebar
-   - Under "Source", select "Deploy from a branch"
-   - Choose "main" branch and "/ (root)" folder
-   - Click "Save"
+   - Under "Source", select "GitHub Actions"
+   - The workflow will automatically deploy on push to `main`
 3. **Deploy**: Your site will be available at `https://[username].github.io/[repository-name]/` within a few minutes
 
 ## What's Included
@@ -25,6 +24,10 @@ This Sixen card game is ready to be deployed to GitHub Pages as a single-page we
 /
 ├── index.html              # Main game entry point
 ├── tutorial.html           # Interactive tutorial
+├── .nojekyll               # Disable Jekyll processing for GitHub Pages
+├── .github/
+│   └── workflows/
+│       └── deploy.yml      # GitHub Actions deployment workflow
 ├── src/
 │   ├── js/
 │   │   ├── game.js         # Core game logic
@@ -63,7 +66,7 @@ This Sixen card game is ready to be deployed to GitHub Pages as a single-page we
 After deployment, your app will be available at:
 `https://[username].github.io/[repository-name]/`
 
-For example: `https://rprice.github.io/sixen/`
+For example: `https://cireo.github.io/sixen/`
 
 ## Development vs Production
 
@@ -76,48 +79,14 @@ No changes needed between development and production - the app works identically
 - **Local storage not working**: Check browser console for errors; some browsers block localStorage in certain contexts
 - **SVG cards not displaying**: Ensure `src/assets/svg-cards.svg` is accessible and the paths in `rendering.js` are correct
 
-## Optional: GitHub Actions Deployment
+## GitHub Actions Deployment
 
-If you prefer using GitHub Actions for deployment (like the mathquiz example), you can create `.github/workflows/deploy.yml`:
+This repository includes a GitHub Actions workflow (`.github/workflows/deploy.yml`) that automatically deploys to GitHub Pages when you push to the `main` branch.
 
-```yaml
-name: Deploy to GitHub Pages
+To use it:
 
-on:
-  push:
-    branches: [ main ]
+1. **Enable GitHub Actions**: Go to your repository settings → "Pages" → "Source" → select "GitHub Actions"
+2. **Push to main**: The workflow will automatically deploy your site
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
-
-jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-      
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: '.'
-      
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-```
-
-Then enable GitHub Actions in your repository settings under "Pages" → "Source" → "GitHub Actions".
+The workflow is already configured and ready to use!
 

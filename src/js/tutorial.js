@@ -567,7 +567,7 @@ let tutorialData = null;
 
 async function loadTutorialData() {
   try {
-    const response = await fetch("tutorial-data.json");
+    const response = await fetch("src/data/tutorial-data.json");
     tutorialData = await response.json();
     return tutorialData;
   } catch (error) {

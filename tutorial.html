@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sixen Tutorial</title>
-    <link rel="stylesheet" href="styles.css" />
-    <link rel="stylesheet" href="tutorial.css" />
+    <link rel="stylesheet" href="src/css/styles.css" />
+    <link rel="stylesheet" href="src/css/tutorial.css" />
   </head>
   <body>
     <div class="tutorial-layout">
@@ -13,6 +13,7 @@
       <aside class="tutorial-sidebar">
         <div class="tutorial-sidebar-header">
           <h1>Sixen Tutorial</h1>
+          <a href="index.html" class="btn btn-secondary" style="margin-top: 10px; display: inline-block;">← Back to Game</a>
         </div>
         <nav id="tutorial-toc" class="tutorial-toc">
           <!-- Table of contents will be generated here -->
@@ -30,14 +31,14 @@
     <!-- SVG Cards Definitions -->
     <object
       id="svg-cards-defs"
-      data="svg-cards.svg"
+      data="src/assets/svg-cards.svg"
       type="image/svg+xml"
       class="hidden"
     ></object>
 
     <!-- Scripts -->
-    <script src="game.js"></script>
-    <script src="rendering.js"></script>
-    <script src="tutorial.js"></script>
+    <script src="src/js/game.js"></script>
+    <script src="src/js/rendering.js"></script>
+    <script src="src/js/tutorial.js"></script>
   </body>
 </html>

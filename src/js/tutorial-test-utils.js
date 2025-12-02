@@ -9,7 +9,7 @@
  */
 async function loadTutorialScenarios() {
   try {
-    const response = await fetch("tutorial-data.json");
+    const response = await fetch("src/data/tutorial-data.json");
     const data = await response.json();
 
     const scenarios = [];

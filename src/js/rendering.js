@@ -88,7 +88,7 @@ function createCardElement(card, size = "normal") {
 
   const use = document.createElementNS(SVG_NAMESPACE, "use");
   const cardId = getCardId(card);
-  use.setAttributeNS(XLINK_NAMESPACE, "href", `svg-cards.svg#${cardId}`);
+  use.setAttributeNS(XLINK_NAMESPACE, "href", `src/assets/svg-cards.svg#${cardId}`);
   use.setAttribute("x", "0");
   use.setAttribute("y", "0");
 
@@ -108,7 +108,7 @@ function createCardBackElement() {
   );
 
   const use = document.createElementNS(SVG_NAMESPACE, "use");
-  use.setAttributeNS(XLINK_NAMESPACE, "href", "svg-cards.svg#back");
+  use.setAttributeNS(XLINK_NAMESPACE, "href", "src/assets/svg-cards.svg#back");
   use.setAttribute("x", "0");
   use.setAttribute("y", "0");
   use.setAttribute("fill", "#0062ff"); // Default blue back

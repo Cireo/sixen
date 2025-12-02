@@ -1,5 +1,8 @@
 # Six–Seven — Player Rules (Concise)
 
+**Version:** 1.0  
+**Date:** January 2025
+
 A fast, tactical card game where players play numbered cards onto face-card **Stacks** to create collectable sums. This concise ruleset gives everything you need to play; a short sketches section at the end lists additional example/illustration ideas for a later detailed version.
 
 ---

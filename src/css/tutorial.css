@@ -9,7 +9,7 @@
 
 /* Sidebar */
 .tutorial-sidebar {
-  width: 250px;
+  width: 275px;
   background: rgba(0, 0, 0, 0.3);
   border-right: 1px solid rgba(255, 255, 255, 0.1);
   padding: 20px;
@@ -35,13 +35,18 @@
 .tutorial-toc {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
 .toc-item {
   padding: 8px 12px;
   border-radius: 4px;
   transition: background 0.2s ease;
+}
+
+.toc-example {
+  padding: 4px 12px 4px 24px;
+  margin-top: -2px;
 }
 
 .toc-item:hover {
@@ -59,10 +64,29 @@
   color: var(--gold);
 }
 
+.toc-section {
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.toc-section:first-child {
+  margin-top: 0;
+}
+
+.toc-section a {
+  color: var(--gold);
+  font-size: 1rem;
+}
+
+.toc-example a {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+}
+
 /* Main Content */
 .tutorial-main {
   flex: 1;
-  margin-left: 250px;
+  margin-left: 275px;
   padding: 40px;
   max-width: 1200px;
 }
@@ -81,6 +105,16 @@
   scroll-margin-top: 20px;
 }
 
+.tutorial-section-title {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  color: var(--gold);
+  margin-bottom: 20px;
+  margin-top: 0;
+  border-bottom: 2px solid rgba(212, 175, 55, 0.3);
+  padding-bottom: 10px;
+}
+
 .tutorial-section-content {
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.9);
@@ -88,9 +122,10 @@
 
 .tutorial-section-content h1 {
   font-family: var(--font-display);
-  font-size: 2.5rem;
+  font-size: 2rem;
   color: var(--gold);
   margin-bottom: 20px;
+  margin-top: 20px;
 }
 
 .tutorial-section-content h2 {
@@ -189,7 +224,8 @@
   gap: 10px;
 }
 
-.tutorial-reset-btn {
+.tutorial-reset-btn,
+.tutorial-play-btn {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: #f0f0f0;
@@ -197,11 +233,28 @@
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-size: 0.9rem;
 }
 
-.tutorial-reset-btn:hover {
+.tutorial-reset-btn:hover,
+.tutorial-play-btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.2);
   border-color: var(--gold);
+}
+
+.tutorial-play-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tutorial-play-btn {
+  background: rgba(212, 175, 55, 0.2);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.tutorial-play-btn:hover:not(:disabled) {
+  background: rgba(212, 175, 55, 0.3);
 }
 
 .tutorial-player-area {
@@ -301,11 +354,11 @@
 /* Responsive Design */
 @media (max-width: 900px) {
   .tutorial-sidebar {
-    width: 200px;
+    width: 220px;
   }
 
   .tutorial-main {
-    margin-left: 200px;
+    margin-left: 220px;
     padding: 20px;
   }
 }

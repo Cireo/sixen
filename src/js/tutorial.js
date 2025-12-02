@@ -19,6 +19,10 @@ class TutorialGame {
     this.endGameMessage = options.endGameMessage || null;
     this.isAutoPlaying = false;
     this.autoPlayIndex = 0;
+    this.isVisible = false;
+    this.hasCompletedAutoplay = false;
+    this.observer = null;
+    this.pendingCollections = new Map(); // Track stacks with pending collections
 
     // Create isolated game instance
     this.game = this.createGameFromScenario(scenario);
@@ -30,11 +34,9 @@ class TutorialGame {
     // Render initial state
     this.render();
 
-    // Start auto-play if enabled
+    // Set up Intersection Observer for visibility detection
     if (options.autoPlay && this.autoPlaySteps.length > 0) {
-      setTimeout(() => {
-        this.startAutoPlay();
-      }, 1000);
+      this.setupVisibilityObserver();
     }
   }
 
@@ -112,6 +114,19 @@ class TutorialGame {
       (this.autoPlaySteps && this.autoPlaySteps.length > 0) ||
       this.autoPlay;
     if (hasInteractivity) {
+      // Add Play/Replay button for autoplay
+      if (this.autoPlaySteps && this.autoPlaySteps.length > 0) {
+        const playBtn = document.createElement("button");
+        playBtn.className = "btn btn-small tutorial-play-btn";
+        playBtn.textContent = "Play";
+        playBtn.id = `${this.containerId}-play-btn`;
+        playBtn.addEventListener("click", () => this.handlePlayClick());
+        controls.appendChild(playBtn);
+        this.playButton = playBtn;
+        // Initialize button state (will be disabled until visible)
+        this.updatePlayButton();
+      }
+
       const resetBtn = document.createElement("button");
       resetBtn.className = "btn btn-small tutorial-reset-btn";
       resetBtn.textContent = "Reset";
@@ -354,9 +369,12 @@ class TutorialGame {
     }
 
     // Match slot
+    // Don't show match slot if collection is pending (to match real game behavior)
+    const hasPendingCollection = this.pendingCollections.has(stackIndex);
     if (
-      window.isStackFull(stack) ||
-      allowedStackPlays.some((p) => p.side === "match")
+      !hasPendingCollection &&
+      (window.isStackFull(stack) ||
+        allowedStackPlays.some((p) => p.side === "match"))
     ) {
       const matchRow = document.createElement("div");
       matchRow.className = "modifier-row";
@@ -417,6 +435,11 @@ class TutorialGame {
       return false;
     }
 
+    // Track pending collection to hide match slot during delay
+    if (result.collectionConditions.length > 0) {
+      this.pendingCollections.set(stackIndex, result.collectionConditions);
+    }
+
     // Render the card in place first
     this.render();
 
@@ -430,6 +453,7 @@ class TutorialGame {
       setTimeout(() => {
         this.showMessage(condition.announcement, () => {
           // Collect stack after message is shown
+          this.pendingCollections.delete(stackIndex);
           this.game.collectStack(stackIndex, condition.type);
           this.game.nextTurn();
           this.render();
@@ -452,9 +476,74 @@ class TutorialGame {
 
   reset() {
     this.stopAutoPlay();
+    this.hasCompletedAutoplay = false;
+    this.pendingCollections.clear();
     this.game = this.createGameFromScenario(this.originalScenario);
     this.initialState = this.game.getState();
     this.render();
+    this.updatePlayButton();
+  }
+
+  setupVisibilityObserver() {
+    if (!("IntersectionObserver" in window)) {
+      // Fallback: just enable autoplay immediately if IntersectionObserver not supported
+      return;
+    }
+
+    this.observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          this.isVisible = entry.isIntersecting;
+          this.updatePlayButton();
+        });
+      },
+      {
+        threshold: 0.3, // Trigger when 30% of the component is visible
+        rootMargin: "50px", // Start detecting slightly before it's fully visible
+      },
+    );
+
+    // Observe the container element
+    if (this.container) {
+      this.observer.observe(this.container);
+    }
+  }
+
+  handlePlayClick() {
+    if (this.isAutoPlaying) {
+      // If already playing, do nothing (or could add pause functionality)
+      return;
+    }
+
+    // Reset if we've completed autoplay, otherwise just start
+    if (this.hasCompletedAutoplay) {
+      this.reset();
+      // Small delay to ensure reset completes before starting
+      setTimeout(() => {
+        this.startAutoPlay();
+      }, 100);
+    } else {
+      this.startAutoPlay();
+    }
+  }
+
+  updatePlayButton() {
+    if (!this.playButton) return;
+
+    if (this.isAutoPlaying) {
+      this.playButton.textContent = "Playing...";
+      this.playButton.disabled = true;
+    } else if (this.hasCompletedAutoplay) {
+      this.playButton.textContent = "Replay";
+      this.playButton.disabled = false;
+    } else if (this.isVisible) {
+      this.playButton.textContent = "Play";
+      this.playButton.disabled = false;
+    } else {
+      // Not visible yet - button is disabled but still shows "Play"
+      this.playButton.textContent = "Play";
+      this.playButton.disabled = true;
+    }
   }
 
   startAutoPlay() {
@@ -462,12 +551,14 @@ class TutorialGame {
 
     this.isAutoPlaying = true;
     this.autoPlayIndex = 0;
+    this.updatePlayButton();
     this.executeAutoPlayStep();
   }
 
   stopAutoPlay() {
     this.isAutoPlaying = false;
     this.autoPlayIndex = 0;
+    this.updatePlayButton();
   }
 
   executeAutoPlayStep() {
@@ -476,6 +567,8 @@ class TutorialGame {
       this.autoPlayIndex >= this.autoPlaySteps.length
     ) {
       this.isAutoPlaying = false;
+      this.hasCompletedAutoplay = true;
+      this.updatePlayButton();
       return;
     }
 
@@ -485,16 +578,18 @@ class TutorialGame {
     // If no card is drawn, we can't play
     if (!state.drawnCard) {
       this.isAutoPlaying = false;
+      this.updatePlayButton();
       return;
     }
 
-    // Execute the play with callback to continue after play completes
-    this.handlePlayCard(step.stackIndex, step.side, (success) => {
-      if (!success) {
-        // Play failed, stop auto-play
-        this.isAutoPlaying = false;
-        return;
-      }
+      // Execute the play with callback to continue after play completes
+      this.handlePlayCard(step.stackIndex, step.side, (success) => {
+        if (!success) {
+          // Play failed, stop auto-play
+          this.isAutoPlaying = false;
+          this.updatePlayButton();
+          return;
+        }
 
       // Move to next step after play completes
       this.autoPlayIndex++;
@@ -504,6 +599,8 @@ class TutorialGame {
         }, this.autoPlayDelay);
       } else {
         this.isAutoPlaying = false;
+        this.hasCompletedAutoplay = true;
+        this.updatePlayButton();
       }
     });
   }
@@ -560,6 +657,14 @@ class TutorialGame {
   getState() {
     return this.game.getState();
   }
+
+  destroy() {
+    // Clean up Intersection Observer
+    if (this.observer) {
+      this.observer.disconnect();
+      this.observer = null;
+    }
+  }
 }
 
 // Tutorial system
@@ -582,25 +687,49 @@ function generateTableOfContents(sections) {
 
   toc.innerHTML = "";
 
-  sections.forEach((section) => {
-    const item = document.createElement("div");
-    item.className = "toc-item";
-    const link = document.createElement("a");
-    link.href = `#${section.id}`;
-    link.textContent = section.title;
-    link.addEventListener("click", (e) => {
+  sections.forEach((section, sectionIndex) => {
+    // Section header with number
+    const sectionItem = document.createElement("div");
+    sectionItem.className = "toc-item toc-section";
+    const sectionLink = document.createElement("a");
+    sectionLink.href = `#${section.id}`;
+    sectionLink.textContent = `${sectionIndex + 1}. ${section.title}`;
+    sectionLink.addEventListener("click", (e) => {
       e.preventDefault();
       const target = document.getElementById(section.id);
       if (target) {
         target.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     });
-    item.appendChild(link);
-    toc.appendChild(item);
+    sectionItem.appendChild(sectionLink);
+    toc.appendChild(sectionItem);
+
+    // Example subheadings
+    if (section.examples && section.examples.length > 0) {
+      section.examples.forEach((example, exampleIndex) => {
+        const exampleItem = document.createElement("div");
+        exampleItem.className = "toc-item toc-example";
+        const exampleLink = document.createElement("a");
+        const exampleId = `${section.id}-example-${exampleIndex}`;
+        exampleLink.href = `#${exampleId}`;
+        // Remove " Collection" from TOC subheadings only (anywhere in title)
+        const tocTitle = example.title.replace(/\s+Collection\s*/gi, " ");
+        exampleLink.textContent = `${sectionIndex + 1}.${exampleIndex + 1} ${tocTitle.trim()}`;
+        exampleLink.addEventListener("click", (e) => {
+          e.preventDefault();
+          const target = document.getElementById(exampleId);
+          if (target) {
+            target.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        });
+        exampleItem.appendChild(exampleLink);
+        toc.appendChild(exampleItem);
+      });
+    }
   });
 }
 
-function renderSection(section) {
+function renderSection(section, sectionIndex) {
   const contentArea = document.getElementById("tutorial-content");
   if (!contentArea) return;
 
@@ -608,6 +737,12 @@ function renderSection(section) {
   const sectionEl = document.createElement("section");
   sectionEl.id = section.id;
   sectionEl.className = "tutorial-section";
+
+  // Add section title header with number
+  const sectionTitle = document.createElement("h1");
+  sectionTitle.className = "tutorial-section-title";
+  sectionTitle.textContent = `${sectionIndex + 1}. ${section.title}`;
+  sectionEl.appendChild(sectionTitle);
 
   // Render content (simple markdown-like parsing for headers and paragraphs)
   const contentDiv = document.createElement("div");
@@ -623,7 +758,7 @@ function renderSection(section) {
       exampleEl.id = `${section.id}-example-${index}`;
 
       const exampleTitle = document.createElement("h3");
-      exampleTitle.textContent = example.title;
+      exampleTitle.textContent = `${sectionIndex + 1}.${index + 1} ${example.title}`;
       exampleEl.appendChild(exampleTitle);
 
       if (example.description) {
@@ -714,8 +849,8 @@ function initializeTutorial() {
     generateTableOfContents(data.sections);
 
     // Render all sections
-    data.sections.forEach((section) => {
-      renderSection(section);
+    data.sections.forEach((section, sectionIndex) => {
+      renderSection(section, sectionIndex);
     });
   });
 }

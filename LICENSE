@@ -20,3 +20,25 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
+---
+
+## Trademark and Game Rules
+
+The following are NOT licensed under the MIT License and remain the exclusive
+property of the copyright holder:
+
+1. **Trademark Rights**: The name "Sixen" and any associated trademarks,
+   service marks, or trade names are reserved. No rights to use these marks
+   are granted by this license.
+
+2. **Game Rules**: The game rules, mechanics, and gameplay concepts described
+   in the documentation (including but not limited to FORMAL_RULES.md and
+   PLAYER_RULES.md) are not licensed under the MIT License. The copyright
+   holder retains all rights to the game rules themselves, including the right
+   to control how the game is described, taught, or published.
+
+The MIT License applies only to the software code, documentation files as
+technical documentation, and other materials explicitly covered by the license
+above. It does not grant any rights to use the game name or to reproduce,
+distribute, or create derivative works of the game rules themselves.
+

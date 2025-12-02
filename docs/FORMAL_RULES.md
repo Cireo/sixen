@@ -1,5 +1,8 @@
 # Formal Ruleset: Working Specification v1.0
 
+**Version:** 1.0  
+**Date:** January 2025
+
 ## 1. Components
 
 ### 1.1 Deck Construction

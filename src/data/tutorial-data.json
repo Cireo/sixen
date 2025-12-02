@@ -222,7 +222,7 @@
             "stacks": [
               {
                 "face": { "rank": "K", "suit": "diamonds" },
-                "left": [],
+                "left": [{ "rank": "6", "suit": "clubs" }],
                 "right": [{ "rank": "6", "suit": "hearts" }],
                 "matchSlot": null
               }
@@ -245,7 +245,7 @@
             "players": ["Player 1"],
             "stacks": [
               {
-                "face": { "rank": "Q", "suit": "diamonds" },
+                "face": { "rank": "K", "suit": "diamonds" },
                 "left": [
                   { "rank": "6", "suit": "hearts" },
                   { "rank": "3", "suit": "clubs" }
@@ -260,7 +260,7 @@
             "drawnCard": { "rank": "7", "suit": "spades" },
             "stuckPlayer": null
           },
-          "allowedMoves": [{ "stackIndex": 0, "side": "left" }],
+          "allowedMoves": [],
           "autoPlay": true,
           "autoPlaySteps": [{ "stackIndex": 0, "side": "left" }]
         },

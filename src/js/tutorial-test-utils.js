@@ -240,6 +240,98 @@ function testScenario(scenarioData) {
 }
 
 /**
+ * Test the "No Six-Seven Collection (Underneath)" scenario specifically
+ * Verifies that playing a 7 on a stack with 6 underneath doesn't trigger Six-Seven
+ * @returns {Object} Test result
+ */
+function testNoSixSevenUnderneath() {
+  const result = {
+    testName: "No Six-Seven Collection (Underneath)",
+    passed: false,
+    errors: [],
+  };
+
+  try {
+    // Create the scenario
+    const scenario = {
+      players: ["Player 1"],
+      stacks: [
+        {
+          face: { rank: "K", suit: "diamonds" },
+          left: [
+            { rank: "6", suit: "hearts" },
+            { rank: "3", suit: "clubs" },
+          ],
+          right: [],
+          matchSlot: null,
+        },
+      ],
+      numberDeck: [{ rank: "A", suit: "clubs" }],
+      faceDeck: [],
+      currentPlayerIndex: 0,
+      drawnCard: { rank: "7", suit: "spades" },
+      stuckPlayer: null,
+    };
+
+    const game = createGameFromScenario(scenario);
+    const state = game.getState();
+
+    // Verify both left and right are legal plays
+    const legalPlays = game.getLegalPlaysForDrawnCard();
+    const leftPlay = legalPlays.find(
+      (p) => p.stackIndex === 0 && p.side === "left",
+    );
+    const rightPlay = legalPlays.find(
+      (p) => p.stackIndex === 0 && p.side === "right",
+    );
+
+    if (!leftPlay) {
+      result.errors.push("Left side should be a legal play");
+    }
+    if (!rightPlay) {
+      result.errors.push("Right side should be a legal play");
+    }
+
+    // Test playing on left - should not trigger Six-Seven
+    const leftResult = game.executePlay(0, "left");
+    if (!leftResult.success) {
+      result.errors.push("Playing 7 on left should succeed");
+    } else {
+      const hasSixSeven = leftResult.collectionConditions.some(
+        (c) => c.type === "six-seven",
+      );
+      if (hasSixSeven) {
+        result.errors.push(
+          "Playing 7 on left should NOT trigger Six-Seven (6 is underneath 3)",
+        );
+      }
+    }
+
+    // Reset and test playing on right - should also not trigger Six-Seven
+    const game2 = createGameFromScenario(scenario);
+    const rightResult = game2.executePlay(0, "right");
+    if (!rightResult.success) {
+      result.errors.push("Playing 7 on right should succeed");
+    } else {
+      const hasSixSeven = rightResult.collectionConditions.some(
+        (c) => c.type === "six-seven",
+      );
+      if (hasSixSeven) {
+        result.errors.push(
+          "Playing 7 on right should NOT trigger Six-Seven (no 6 visible)",
+        );
+      }
+    }
+
+    result.passed = result.errors.length === 0;
+  } catch (error) {
+    result.errors.push(`Error: ${error.message}`);
+  }
+
+  return result;
+}
+
+/**
  * Run tests on all tutorial scenarios
  * @returns {Promise<Object>} Test results
  */
@@ -272,6 +364,7 @@ if (typeof window !== "undefined") {
     validateScenario,
     createGameFromScenario,
     testScenario,
+    testNoSixSevenUnderneath,
     runTutorialTests,
   };
 }
@@ -283,6 +376,7 @@ if (typeof module !== "undefined" && module.exports) {
     validateScenario,
     createGameFromScenario,
     testScenario,
+    testNoSixSevenUnderneath,
     runTutorialTests,
   };
 }

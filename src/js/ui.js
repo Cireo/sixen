@@ -1030,6 +1030,12 @@ function handleDrawCard() {
       return; // Don't proceed with auto-creating stack
     }
 
+    // Check if we're already in last round BEFORE calling handleNoLegalPlay
+    // (since handleNoLegalPlay will set stuckPlayer if it's the first time)
+    const stateBefore = game.getState();
+    const isAlreadyLastRound = stateBefore.stuckPlayer !== null;
+    const isSolitaire = stateBefore.players.length === 1;
+
     const result = game.handleNoLegalPlay();
 
     if (result.createNewStack) {
@@ -1068,8 +1074,6 @@ function handleDrawCard() {
       // Player is stuck, show card, then show message and advance turn
       // Don't clear the drawn card - keep it visible for players in the final round
       const state = game.getState();
-      const isSolitaire = state.players.length === 1;
-      const isAlreadyLastRound = state.stuckPlayer !== null;
 
       let message;
       if (isSolitaire) {

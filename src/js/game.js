@@ -381,8 +381,9 @@ class SixSevenGame {
     this.gameOver = false;
     this.lastPlayedIndex = null;
 
-    // Initialize stacks (one per player)
-    for (let i = 0; i < this.players.length; i++) {
+    // Initialize stacks (always 3 stacks, regardless of player count)
+    const INITIAL_STACKS = 3;
+    for (let i = 0; i < INITIAL_STACKS; i++) {
       const faceCard = this.faceDeck.pop();
       this.stacks.push(createStack(faceCard));
     }

@@ -8,12 +8,12 @@
     {
       "id": "setup",
       "title": "Setup & Components",
-      "content": "## Setup & Components\n\n### Components\n\n- Standard 52-card deck (no Jokers)\n- Split into two face-down decks:\n  - **Face Deck**: J, Q, K (only used to create Stacks)\n  - **Number Deck**: A (1) through 10 (numeric values)\n\n> **Important:** Face cards (J/Q/K) have **no numeric value**. They only determine the per-side capacity of a Stack.\n\n### Setup Steps\n\n1. Shuffle Face Deck and Number Deck separately.\n2. Reveal one Face card per player to create the initial Stacks (place face-up in the play area).\n3. Youngest player goes first; play proceeds clockwise.",
+      "content": "## Setup & Components\n\n### Components\n\n- Standard 52-card deck (no Jokers)\n- Split into two face-down decks:\n  - **Face Deck**: J, Q, K (only used to create Stacks)\n  - **Number Deck**: A (1) through 10 (numeric values)\n\n> **Important:** Face cards (J/Q/K) have **no numeric value**. They only determine the per-side capacity of a Stack.\n\n### Setup Steps\n\n1. Shuffle Face Deck and Number Deck separately.\n2. Reveal **3 Face cards** to create the initial Stacks (place face-up in the play area), regardless of the number of players.\n3. Youngest player goes first; play proceeds clockwise.",
       "examples": [
         {
           "id": "setup-example",
-          "title": "Initial Setup (2 Players)",
-          "description": "A game starts with 2 players. One face card is revealed per player to create the initial stacks.",
+          "title": "Initial Setup",
+          "description": "A game always starts with 3 face cards revealed to create the initial stacks, regardless of player count.",
           "scenario": {
             "players": ["Player 1", "Player 2"],
             "stacks": [
@@ -28,6 +28,12 @@
                 "left": [],
                 "right": [],
                 "matchSlot": null
+              },
+              {
+                "face": { "rank": "J", "suit": "clubs" },
+                "left": [],
+                "right": [],
+                "matchSlot": null
               }
             ],
             "numberDeck": [
@@ -36,7 +42,6 @@
               { "rank": "3", "suit": "hearts" }
             ],
             "faceDeck": [
-              { "rank": "J", "suit": "clubs" },
               { "rank": "K", "suit": "diamonds" }
             ],
             "currentPlayerIndex": 0,

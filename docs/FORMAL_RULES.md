@@ -1,7 +1,7 @@
-# Formal Ruleset: Working Specification v1.0
+# Formal Ruleset: Working Specification v1.1
 
-**Version:** 1.0  
-**Date:** January 2025
+**Version:** 1.1  
+**Date:** December 2025
 
 ## 1. Components
 
@@ -81,8 +81,8 @@ A Match play:
 
 ### 4.1 Stacks in Play
 
-- The number of initial Stacks equals the number of Players.
-- Reveal that many Face Cards from the Face Deck and create empty Stacks.
+- The game always starts with **3 initial Stacks**, regardless of the number of Players.
+- Reveal 3 Face Cards from the Face Deck and create empty Stacks.
 
 ### 4.2 Turn Order
 

@@ -44,6 +44,7 @@ let showStackSum = true; // Game option: show stack sum display
 let hideIllegalMoves = true; // Game option: hide illegal moves (when true, don't show illegal sum moves)
 let autoStartNewStacks = true; // Game option: automatically start new stacks (when true, auto-create; when false, require click)
 let debugMode = false; // Debug mode flag
+let isLoadingScenario = false; // Flag to track if we're loading a scenario (skip high scores)
 let isProcessing = false; // Prevent drawing during animations/processing
 let noValidMovesTimer = null; // Timer for tracking when no valid moves
 let faceDeckShakeInterval = null; // Interval for shaking face deck
@@ -210,6 +211,7 @@ function updatePlayerButtons() {
  * Start a new game
  */
 function startGame() {
+  isLoadingScenario = false; // Reset flag when starting a new game normally
   const names = [];
   for (let i = 1; i <= playerCount; i++) {
     const input = document.getElementById(`player-${i}`);
@@ -277,7 +279,6 @@ function showScreen(screen) {
   gameScreen.classList.toggle("hidden", screen !== "game");
   gameoverScreen.classList.toggle("hidden", screen !== "gameover");
 }
-
 
 /**
  * Render the entire game state
@@ -488,24 +489,24 @@ function handleFaceDeckClick() {
 
   const result = game.handleNoLegalPlay();
   if (result.createNewStack) {
-    // A new stack was created
+    // A new stack was created - render it immediately so user can see it
+    renderGame();
+
     if (autoPlayNewStacks && autoDraw) {
       // Auto-play on the new stack (only if both auto-draw and auto-play are enabled)
-      const newPlays = game.getLegalPlaysForDrawnCard();
-      if (newPlays.length > 0) {
-        const play =
-          newPlays.find((p) => p.stackIndex === result.newStackIndex) ||
-          newPlays[0];
-        setTimeout(() => {
+      // Wait a bit longer to give user time to see the new stack before auto-playing
+      setTimeout(() => {
+        const newPlays = game.getLegalPlaysForDrawnCard();
+        if (newPlays.length > 0) {
+          const play =
+            newPlays.find((p) => p.stackIndex === result.newStackIndex) ||
+            newPlays[0];
           handlePlayCard(play.stackIndex, play.side);
-        }, 500);
-      }
-    } else {
-      renderGame(); // Re-render to show the new stack
+        }
+      }, 2000); // Longer delay to ensure stack is visible
     }
   }
 }
-
 
 /**
  * Render players at top
@@ -605,9 +606,9 @@ function renderPlayers(state) {
  * Update player deck displays
  */
 function updatePlayerDecks(state) {
-    const playerColors = getRendering().PLAYER_COLORS || [];
-    const currentPlayerColor =
-      playerColors[state.currentPlayerIndex % playerColors.length];
+  const playerColors = getRendering().PLAYER_COLORS || [];
+  const currentPlayerColor =
+    playerColors[state.currentPlayerIndex % playerColors.length];
 
   state.players.forEach((player, index) => {
     const isCurrentPlayer = index === state.currentPlayerIndex;
@@ -650,7 +651,9 @@ function updatePlayerDecks(state) {
           const display = drawnCardOverlay.querySelector(".drawn-card-display");
           if (display) {
             display.innerHTML = "";
-            display.appendChild(getRendering().createCardElement(state.drawnCard));
+            display.appendChild(
+              getRendering().createCardElement(state.drawnCard),
+            );
           }
         }
       } else if (playerHasStuckCard && player.stuckCard) {
@@ -661,7 +664,9 @@ function updatePlayerDecks(state) {
           const display = drawnCardOverlay.querySelector(".drawn-card-display");
           if (display) {
             display.innerHTML = "";
-            display.appendChild(getRendering().createCardElement(player.stuckCard));
+            display.appendChild(
+              getRendering().createCardElement(player.stuckCard),
+            );
           }
         }
       } else if (isCurrentPlayer) {
@@ -688,7 +693,9 @@ function updatePlayerDecks(state) {
         if (existingEmpty) existingEmpty.remove();
 
         if (state.numberDeckCount > 0) {
-          const cardStack = getRendering().createDeckStack(state.numberDeckCount);
+          const cardStack = getRendering().createDeckStack(
+            state.numberDeckCount,
+          );
           deckDisplay.appendChild(cardStack);
         } else {
           const emptyDiv = document.createElement("div");
@@ -866,7 +873,9 @@ function renderStacksInternal(state) {
 
       if (stack.matchSlot) {
         matchSlot.classList.add("filled");
-        matchSlot.appendChild(getRendering().createCardElement(stack.matchSlot));
+        matchSlot.appendChild(
+          getRendering().createCardElement(stack.matchSlot),
+        );
       } else {
         // Check if this is a legal match play or if we should show it anyway (when not hiding illegal moves)
         const isLegalMatch = stackPlays.some((p) => p.side === "match");
@@ -923,10 +932,10 @@ function renderStacksInternal(state) {
           stackEl.style.transition = "none";
           stackEl.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
           stackEl.style.opacity = "0";
-          
+
           // Force a reflow to ensure initial transform is applied
           void stackEl.offsetHeight;
-          
+
           // Use double requestAnimationFrame for smooth animation start
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
@@ -934,7 +943,7 @@ function renderStacksInternal(state) {
               // Use a smooth easing function for consistent animation
               stackEl.style.transition =
                 "transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1)";
-              
+
               // Trigger animation in next frame
               requestAnimationFrame(() => {
                 stackEl.style.transform = "translate(0, 0)";
@@ -1035,73 +1044,80 @@ function handleDrawCard() {
     const stateBefore = game.getState();
     const isAlreadyLastRound = stateBefore.stuckPlayer !== null;
     const isSolitaire = stateBefore.players.length === 1;
+    const hasFaceDeck = stateBefore.faceDeckCount > 0;
 
-    const result = game.handleNoLegalPlay();
-
-    if (result.createNewStack) {
-      // A new stack was created
-      if (autoPlayNewStacks && autoDraw) {
-        // Auto-play on the new stack (only if both auto-draw and auto-play are enabled)
-        const newPlays = game.getLegalPlaysForDrawnCard();
-        if (newPlays.length > 0) {
-          const play =
-            newPlays.find((p) => p.stackIndex === result.newStackIndex) ||
-            newPlays[0];
-          setTimeout(() => {
-            handlePlayCard(play.stackIndex, play.side);
-          }, 1500);
-        }
-      } else {
-        // Show message and wait for user to play
-        setTimeout(() => {
-          showAnnouncement(
-            "No moves available. Starting new stack...",
-            null,
-            1500,
-          );
-          setTimeout(() => {
-            renderGame(); // Re-render to show the new stack
-          }, 500);
-        }, 1500);
-      }
-    } else if (result.gameOver) {
-      // Game over - wait 1.5s to show the card, then end game
+    if (hasFaceDeck) {
+      // Show message first, then create stack
       setTimeout(() => {
-        game.gameOver = true;
-        renderGame();
+        showAnnouncement(
+          "No moves available. Starting new stack...",
+          null,
+          1500,
+        );
+        setTimeout(() => {
+          const result = game.handleNoLegalPlay();
+
+          if (result.createNewStack) {
+            // A new stack was created - render it immediately so user can see it
+            renderGame();
+
+            if (autoPlayNewStacks && autoDraw) {
+              // Auto-play on the new stack (only if both auto-draw and auto-play are enabled)
+              // Wait longer before auto-playing to give user time to see the stack
+              setTimeout(() => {
+                const newPlays = game.getLegalPlaysForDrawnCard();
+                if (newPlays.length > 0) {
+                  const play =
+                    newPlays.find(
+                      (p) => p.stackIndex === result.newStackIndex,
+                    ) || newPlays[0];
+                  handlePlayCard(play.stackIndex, play.side);
+                }
+              }, 1000); // Additional delay after stack is rendered to ensure it's visible
+            }
+          }
+        }, 500); // Small delay after message to let it show
       }, 1500);
     } else {
-      // Player is stuck, show card, then show message and advance turn
-      // Don't clear the drawn card - keep it visible for players in the final round
-      const state = game.getState();
+      // No face deck - player is stuck
+      const result = game.handleNoLegalPlay();
 
-      let message;
-      if (isSolitaire) {
-        message = "No more moves!";
-      } else if (isAlreadyLastRound) {
-        // Already in last round - this is another player who can't play
-        message = "No available moves";
-      } else {
-        // First player to get stuck - starting last round
-        message = "No available moves, last round!";
-      }
-
-      // Check if there are any possible moves (including illegal ones) when hideIllegalMoves is false
-      let hasPossibleMoves = false;
-      if (!hideIllegalMoves && state.drawnCard) {
-        hasPossibleMoves = hasAnyPossibleMoves(state);
-      }
-
-      // Wait 3 seconds if there are possible moves (illegal ones), otherwise 1.5 seconds
-      const delay = hasPossibleMoves ? 3000 : 1500;
-
-      setTimeout(() => {
-        showAnnouncement(message, null, 1500);
+      if (result.gameOver) {
+        // Game over - wait 1.5s to show the card, then end game
         setTimeout(() => {
-          game.nextTurn();
+          game.gameOver = true;
           renderGame();
         }, 1500);
-      }, delay);
+      } else {
+        // Player is stuck, show message and advance turn
+        const state = game.getState();
+
+        let message;
+        if (isSolitaire) {
+          message = "No more moves!";
+        } else if (isAlreadyLastRound) {
+          message = "No available moves";
+        } else {
+          message = "No available moves, last round!";
+        }
+
+        // Check if there are any possible moves (including illegal ones) when hideIllegalMoves is false
+        let hasPossibleMoves = false;
+        if (!hideIllegalMoves && state.drawnCard) {
+          hasPossibleMoves = hasAnyPossibleMoves(state);
+        }
+
+        // Wait 3 seconds if there are possible moves (illegal ones), otherwise 1.5 seconds
+        const delay = hasPossibleMoves ? 3000 : 1500;
+
+        setTimeout(() => {
+          showAnnouncement(message, null, 1500);
+          setTimeout(() => {
+            game.nextTurn();
+            renderGame();
+          }, 1500);
+        }, delay);
+      }
     }
     return; // Don't call renderGame() again at the end
   }
@@ -1178,6 +1194,9 @@ function handlePlayCard(stackIndex, side) {
     }
   }
 
+  // Render the card on the stack first so user can see it before collection
+  renderGame();
+
   if (result.collectionConditions.length > 0) {
     // Player can collect - prioritize six-seven over other conditions
     let condition = result.collectionConditions.find(
@@ -1189,43 +1208,45 @@ function handlePlayCard(stackIndex, side) {
     pendingCollection = { stackIndex, type: condition.type };
     isProcessing = true; // Lock drawing during animation
 
-    // Show announcement immediately (before animation)
-    showAnnouncement(condition.announcement, null, null);
-
-    // Start animation after brief delay
+    // Wait longer for the card to be visible on the stack, then show announcement
     setTimeout(() => {
-      animateStackCollection(stackIndex, () => {
-        // Start fade-out immediately (fade-out happens during the final portion of display)
-        announcementOverlay.classList.add("fade-out");
-        setTimeout(() => {
-          announcementOverlay.classList.add("hidden");
-          announcementOverlay.classList.remove("fade-out");
-          const oldStackCount = game.getState().stacks.length;
-          game.collectStack(
-            pendingCollection.stackIndex,
-            pendingCollection.type,
-          );
-          const newState = game.getState();
-          const newStackCount = newState.stacks.length;
-          // If a new stack was created (one removed, one added), animate it
-          shouldAnimateNewStack = newStackCount === oldStackCount;
-          pendingCollection = null;
-          isProcessing = false; // Unlock drawing after animation completes
-          clearNoValidMovesTimer();
-          stopFaceDeckShaking();
+      showAnnouncement(condition.announcement, null, null);
 
-          // Check if game should end (no stacks and no face cards)
-          if (newStackCount === 0 && newState.faceDeckCount === 0) {
-            game.gameOver = true;
-            showGameOver();
-            return;
-          }
+      // Start animation after brief delay
+      setTimeout(() => {
+        animateStackCollection(stackIndex, () => {
+          // Start fade-out immediately (fade-out happens during the final portion of display)
+          announcementOverlay.classList.add("fade-out");
+          setTimeout(() => {
+            announcementOverlay.classList.add("hidden");
+            announcementOverlay.classList.remove("fade-out");
+            const oldStackCount = game.getState().stacks.length;
+            game.collectStack(
+              pendingCollection.stackIndex,
+              pendingCollection.type,
+            );
+            const newState = game.getState();
+            const newStackCount = newState.stacks.length;
+            // If a new stack was created (one removed, one added), animate it
+            shouldAnimateNewStack = newStackCount === oldStackCount;
+            pendingCollection = null;
+            isProcessing = false; // Unlock drawing after animation completes
+            clearNoValidMovesTimer();
+            stopFaceDeckShaking();
 
-          game.nextTurn();
-          renderGame();
-        }, 300); // Match fade-out animation duration
-      });
-    }, 200); // Brief delay before animation starts
+            // Check if game should end (no stacks and no face cards)
+            if (newStackCount === 0 && newState.faceDeckCount === 0) {
+              game.gameOver = true;
+              showGameOver();
+              return;
+            }
+
+            game.nextTurn();
+            renderGame();
+          }, 300); // Match fade-out animation duration
+        });
+      }, 200); // Brief delay before animation starts
+    }, 500); // Longer delay to show card on stack before announcement
   } else {
     // No collection, just advance turn
     clearNoValidMovesTimer();
@@ -1353,7 +1374,15 @@ function showHighScores() {
       // Trophy for top 3
       const trophy = getUtils().getTrophyEmoji(index + 1);
 
-      entry.innerHTML = getUIHelpers().createScoreEntryHTML(score, trophy, dateStr);
+      // Rank is 1-based
+      const rank = index + 1;
+
+      entry.innerHTML = getUIHelpers().createScoreEntryHTML(
+        score,
+        trophy,
+        dateStr,
+        rank,
+      );
       list.appendChild(entry);
     });
   }
@@ -1361,7 +1390,6 @@ function showHighScores() {
   // Show overlay with fade-in
   getUIHelpers().animateOverlayFadeIn(overlay);
 }
-
 
 /**
  * Show game over overlay
@@ -1371,8 +1399,8 @@ function showGameOver() {
   const winner = scores[0];
   const isSolitaire = scores.length === 1;
 
-  if (isSolitaire) {
-    // Solitaire mode: show high score message and nearby scores
+  if (isSolitaire && !isLoadingScenario) {
+    // Solitaire mode: show high score message and nearby scores (skip if loading scenario)
     const result = getHighScoresModule().addHighScore(
       winner.name,
       winner.faceCards,
@@ -1382,7 +1410,10 @@ function showGameOver() {
 
     let message;
     if (result.isInTop20) {
-      message = getHighScoresModule().formatRankMessage(result.rank, result.isNewTopForPlayer);
+      message = getHighScoresModule().formatRankMessage(
+        result.rank,
+        result.isNewTopForPlayer,
+      );
     } else {
       message = "Good Game!";
     }
@@ -1423,12 +1454,24 @@ function showGameOver() {
             ? getUtils().getTrophyEmoji(item.displayIndex)
             : "";
 
-        entry.innerHTML = getUIHelpers().createScoreEntryHTML(item.score, trophy, dateStr);
+        // Get rank for display
+        const rank = item.displayIndex || null;
+
+        entry.innerHTML = getUIHelpers().createScoreEntryHTML(
+          item.score,
+          trophy,
+          dateStr,
+          rank,
+        );
         finalScores.appendChild(entry);
       }
     });
+  } else if (isSolitaire && isLoadingScenario) {
+    // Solitaire mode but loading scenario - just show simple message, no high scores
+    winnerName.textContent = "Good Game!";
+    finalScores.innerHTML = ""; // Clear scores display
   } else {
-    // Multi-player mode: show winner
+    // Multi-player mode: show winner and final standings (no high scores)
     winnerName.textContent = `${winner.name} Wins!`;
 
     finalScores.innerHTML = "";
@@ -1437,7 +1480,20 @@ function showGameOver() {
       entry.className = "score-entry";
       if (index === 0) entry.classList.add("winner");
 
-      entry.innerHTML = getUIHelpers().createScoreEntryHTML(player, "", "");
+      // Show player standings with rank (no date, no high score format)
+      const rank = index + 1;
+      const trophy = getUtils().getTrophyEmoji(rank);
+      const trophyPrefix = trophy ? `${trophy} ` : "";
+
+      entry.innerHTML = `
+        <span class="score-rank">${rank}</span>
+        <span class="player-name">${trophyPrefix}${player.name}</span>
+        <div class="score-details">
+          <span>Stacks: ${player.faceCards}</span>
+          <span>Cards: ${player.totalCards}</span>
+          <span>6-7s: ${player.sixSevenCount || 0}</span>
+        </div>
+      `;
       finalScores.appendChild(entry);
     });
   }
@@ -1453,7 +1509,10 @@ function createGameLogo() {
   if (!gameLogo) return;
 
   // 6 of Hearts (CCW rotated)
-  const card6 = getRendering().createCardElement({ rank: "6", suit: "hearts" }, "large");
+  const card6 = getRendering().createCardElement(
+    { rank: "6", suit: "hearts" },
+    "large",
+  );
   if (card6) {
     card6.classList.add("logo-card", "logo-card-6");
     card6.style.width = "150px";
@@ -1462,7 +1521,10 @@ function createGameLogo() {
   }
 
   // 7 of Spades (CW rotated, on top)
-  const card7 = getRendering().createCardElement({ rank: "7", suit: "spades" }, "large");
+  const card7 = getRendering().createCardElement(
+    { rank: "7", suit: "spades" },
+    "large",
+  );
   if (card7) {
     card7.classList.add("logo-card", "logo-card-7");
     card7.style.width = "150px";
@@ -1490,6 +1552,8 @@ window.loadScenario = function (scenarioName) {
     console.error("Debug mode not enabled. Call enableDebugMode() first.");
     return;
   }
+
+  isLoadingScenario = true; // Set flag to skip high score collection
 
   const scenario = SCENARIOS[scenarioName];
   if (!scenario) {
@@ -1581,6 +1645,9 @@ window.loadScenario = function (scenarioName) {
 
   showScreen("game");
   renderGame();
+
+  // Don't reset the flag - keep it set so high scores aren't saved
+  // The flag will be reset when a new game starts normally
   console.log(`Loaded scenario: ${scenarioName}`);
 };
 
@@ -1671,8 +1738,22 @@ const SCENARIOS = {
     drawnCard: { rank: "9", suit: "diamonds" },
     stuckPlayer: 0,
   },
+  "new-stack-six-six": {
+    players: ["Player 1"],
+    stacks: [
+      {
+        face: { rank: "J", suit: "diamonds" },
+        left: [{ rank: "10", suit: "hearts" }],
+        right: [],
+      },
+    ],
+    numberDeck: [{ rank: "6", suit: "hearts" }],
+    faceDeck: [{ rank: "K", suit: "diamonds" }],
+    currentPlayerIndex: 0,
+    drawnCard: { rank: "5", suit: "spades" },
+    // Expected: When auto-play is enabled, the 6 plays on the new stack, sum becomes 6, triggers Six Six!
+  },
 };
-
 
 // Initialize on load
 document.addEventListener("DOMContentLoaded", () => {

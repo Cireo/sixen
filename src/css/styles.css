@@ -588,7 +588,7 @@ body {
   color: rgba(255, 255, 255, 0.3);
   font-size: 2rem;
   font-weight: bold;
-  text-shadow: 
+  text-shadow:
     -1px -1px 0 #000,
     1px -1px 0 #000,
     -1px 1px 0 #000,
@@ -602,7 +602,7 @@ body {
   color: rgba(255, 255, 255, 0.3);
   font-size: 2rem;
   font-weight: bold;
-  text-shadow: 
+  text-shadow:
     -1px -1px 0 #000,
     1px -1px 0 #000,
     -1px 1px 0 #000,
@@ -626,7 +626,7 @@ body {
   font-size: 1rem;
   text-transform: uppercase;
   letter-spacing: 2px;
-  text-shadow: 
+  text-shadow:
     -1px -1px 0 #000,
     1px -1px 0 #000,
     -1px 1px 0 #000,
@@ -966,6 +966,7 @@ body {
   align-items: center;
   padding: 12px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 16px;
 }
 
 .score-entry:last-child {
@@ -989,9 +990,18 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.score-entry .score-rank {
+  min-width: 40px;
+  font-weight: bold;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: right;
+}
+
 .score-entry .player-name {
   font-weight: bold;
   font-size: 1.1rem;
+  flex: 1;
 }
 
 .score-entry.winner .player-name {

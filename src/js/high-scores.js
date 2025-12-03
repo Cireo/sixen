@@ -5,15 +5,26 @@
 
 const HIGH_SCORE_KEY = "sixseven-highscores";
 const MAX_HIGH_SCORES = 20;
+const CURRENT_GAME_VERSION = "1.1";
 
 /**
  * Get all high scores from localStorage
+ * Backfills version 1.0 for scores without a version
  * @returns {Array} Array of score objects
  */
 function getHighScores() {
   try {
     const stored = localStorage.getItem(HIGH_SCORE_KEY);
-    return stored ? JSON.parse(stored) : [];
+    if (!stored) return [];
+
+    const scores = JSON.parse(stored);
+    // Backfill version 1.0 for scores without a version
+    return scores.map((score) => {
+      if (!score.gameVersion) {
+        return { ...score, gameVersion: "1.0" };
+      }
+      return score;
+    });
   } catch (e) {
     return [];
   }
@@ -119,6 +130,7 @@ function addHighScore(playerName, faceCards, totalCards, sixSevenCount) {
     totalCards,
     sixSevenCount,
     timestamp: Date.now(),
+    gameVersion: CURRENT_GAME_VERSION,
   };
 
   // Check if this is the player's personal best BEFORE adding to list
@@ -190,6 +202,7 @@ function formatRankMessage(rank, isNewTopForPlayer) {
 
 /**
  * Get nearby scores for display (3 above and 3 below, or lowest 3 + ellipsis + latest)
+ * Always includes top 3 scores with ellipsis if there's a gap
  * @param {Array} allScores - All saved scores
  * @param {number} newScoreTimestamp - Timestamp of the new score
  * @param {boolean} isInTop20 - Whether the new score is in the top 20
@@ -216,45 +229,113 @@ function getNearbyScores(allScores, newScoreTimestamp, isInTop20, newScoreObj) {
     (s) => s.timestamp === newScoreTimestamp,
   );
 
+  const result = [];
+
   if (isInTop20 && newScoreIndex >= 0) {
     // Show 3 above and 3 below the new score
     const startIndex = Math.max(0, newScoreIndex - 3);
     const endIndex = Math.min(allScores.length, newScoreIndex + 4); // +4 to include the new score and 3 below
-    return allScores.slice(startIndex, endIndex).map((score, idx) => ({
+
+    // Get the nearby scores
+    const nearbyScores = allScores
+      .slice(startIndex, endIndex)
+      .map((score, idx) => ({
+        score,
+        isNewScore: score.timestamp === newScoreTimestamp,
+        displayIndex: startIndex + idx + 1, // 1-based rank
+      }));
+
+    // Always include top 3
+    const top3 = allScores.slice(0, 3).map((score, idx) => ({
       score,
       isNewScore: score.timestamp === newScoreTimestamp,
-      displayIndex: startIndex + idx + 1, // 1-based rank
+      displayIndex: idx + 1,
     }));
-  } else {
-    // Show lowest 3 + ellipsis + latest (new score)
-    const lowest3 = allScores.slice(-3); // Last 3 (lowest scores)
 
-    // Check if new score is already in the lowest 3 (shouldn't happen if not in top 20, but check anyway)
+    // Check if there's overlap between top 3 and nearby scores
+    const top3Indices = new Set(top3.map((item) => item.displayIndex));
+    const nearbyIndices = new Set(
+      nearbyScores.map((item) => item.displayIndex),
+    );
+    const hasOverlap = Array.from(top3Indices).some((idx) =>
+      nearbyIndices.has(idx),
+    );
+    const maxTop3Index = Math.max(...Array.from(top3Indices));
+    const minNearbyIndex = Math.min(...Array.from(nearbyIndices));
+
+    if (!hasOverlap && minNearbyIndex > maxTop3Index + 1) {
+      // No overlap and there's a gap - show top 3, ellipsis, then nearby
+      result.push(...top3);
+      result.push({ isEllipsis: true });
+      result.push(...nearbyScores);
+    } else {
+      // There's overlap or no gap - merge them in order, avoiding duplicates
+      const allItems = new Map();
+
+      // Add all items to map (nearby scores will overwrite top3 if duplicate)
+      top3.forEach((item) => {
+        allItems.set(item.displayIndex, item);
+      });
+      nearbyScores.forEach((item) => {
+        allItems.set(item.displayIndex, item);
+      });
+
+      // Sort by displayIndex and add ellipsis where needed
+      const sortedIndices = Array.from(allItems.keys()).sort((a, b) => a - b);
+      let lastIndex = null;
+
+      sortedIndices.forEach((idx, i) => {
+        // Add ellipsis if there's a gap
+        if (lastIndex !== null && idx > lastIndex + 1) {
+          result.push({ isEllipsis: true });
+        }
+        result.push(allItems.get(idx));
+        lastIndex = idx;
+      });
+    }
+  } else {
+    // Score is not in top 20 - show: new score ... bottom 3 ... top 3
+    const top3 = allScores.slice(0, 3).map((score, idx) => ({
+      score,
+      isNewScore: false,
+      displayIndex: idx + 1,
+    }));
+
+    const lowest3 = allScores.slice(-3); // Last 3 (lowest scores)
+    const lowest3StartIndex = allScores.length - 3;
+
+    // Check if new score is already in the lowest 3
     const isInLowest3 = lowest3.some((s) => s.timestamp === newScoreTimestamp);
 
     if (isInLowest3) {
-      // New score is already in the lowest 3, just show those
-      return lowest3.map((score, idx) => ({
+      // New score is already in the lowest 3
+      const lowest3WithNew = lowest3.map((score, idx) => ({
         score,
         isNewScore: score.timestamp === newScoreTimestamp,
-        displayIndex: allScores.length - 3 + idx + 1,
+        displayIndex: lowest3StartIndex + idx + 1,
       }));
-    } else {
-      // Show lowest 3, ellipsis, and new score
-      const result = [
-        ...lowest3.map((score, idx) => ({
-          score,
-          isNewScore: false,
-          displayIndex: allScores.length - 3 + idx + 1,
-        })),
-      ];
 
-      // Only add ellipsis if there are more than 3 scores
-      if (allScores.length > 3) {
+      // Check if there's a gap between lowest 3 and top 3
+      if (allScores.length > 6) {
+        result.push(...lowest3WithNew);
         result.push({ isEllipsis: true });
+        result.push(...top3);
+      } else {
+        // No gap, just show all scores
+        result.push(...lowest3WithNew);
+        if (allScores.length > 3) {
+          result.push(
+            ...top3.filter(
+              (t) =>
+                !lowest3WithNew.some(
+                  (l) => l.score.timestamp === t.score.timestamp,
+                ),
+            ),
+          );
+        }
       }
-
-      // Add the new score
+    } else {
+      // Show new score, ellipsis, lowest 3, ellipsis, top 3
       if (newScoreObj) {
         result.push({
           score: newScoreObj,
@@ -263,9 +344,31 @@ function getNearbyScores(allScores, newScoreTimestamp, isInTop20, newScoreObj) {
         });
       }
 
-      return result;
+      // Add ellipsis if there are more than 0 scores
+      if (allScores.length > 0) {
+        result.push({ isEllipsis: true });
+      }
+
+      // Add lowest 3
+      result.push(
+        ...lowest3.map((score, idx) => ({
+          score,
+          isNewScore: false,
+          displayIndex: lowest3StartIndex + idx + 1,
+        })),
+      );
+
+      // Add ellipsis between lowest 3 and top 3 if there's a gap
+      if (allScores.length > 6) {
+        result.push({ isEllipsis: true });
+      }
+
+      // Add top 3
+      result.push(...top3);
     }
   }
+
+  return result;
 }
 
 // Export for use in ui.js
@@ -282,4 +385,3 @@ if (typeof window !== "undefined") {
     MAX_HIGH_SCORES,
   };
 }
-

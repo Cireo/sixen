@@ -1,7 +1,7 @@
 # Six–Seven — Player Rules (Concise)
 
-**Version:** 1.0  
-**Date:** January 2025
+**Version:** 1.1  
+**Date:** December 2025
 
 A fast, tactical card game where players play numbered cards onto face-card **Stacks** to create collectable sums. This concise ruleset gives everything you need to play; a short sketches section at the end lists additional example/illustration ideas for a later detailed version.
 
@@ -21,7 +21,7 @@ A fast, tactical card game where players play numbered cards onto face-card **St
 ## Setup
 
 1. Shuffle Face Deck and Number Deck separately.
-2. Reveal one Face card per player to form the initial Stacks (place face-up in the play area).
+2. Reveal **3 Face cards** to form the initial Stacks (place face-up in the play area), regardless of the number of players.
 3. Youngest player goes first; play proceeds clockwise.
 
 ---

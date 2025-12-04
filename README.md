@@ -7,12 +7,14 @@ A fast, tactical card game where players play numbered cards onto face-card **St
 ## ✨ Features
 
 ### 🎯 Core Gameplay
+
 - **Multiplayer Mode**: Play with 2-5 players
 - **Solitaire Mode**: Play solo and compete for high scores
 - **Tactical Strategy**: Manage stacks, plan collections, and outmaneuver opponents
 - **Multiple Collection Types**: Six-Six, Seven-Seven, Six-Seven, Zero, and Match collections
 
 ### 🎮 Game Options
+
 - **Auto-draw**: Automatically draw cards on your turn
 - **Auto-play on new stacks**: Automatically play when new stacks are created
 - **Show stack sums**: Display current sum for each stack
@@ -20,16 +22,19 @@ A fast, tactical card game where players play numbered cards onto face-card **St
 - **Auto-start new stacks**: Automatically create new stacks when needed
 
 ### 📚 Interactive Tutorial
+
 - **Comprehensive Tutorial System**: Learn the game with interactive examples
 - **Step-by-step Guidance**: Auto-play demonstrations of key concepts
 - **Visual Examples**: See game scenarios in action
 
 ### 🏆 High Score Tracking
+
 - **Solitaire Leaderboard**: Track your best scores
 - **Nearby Scores Display**: See scores around your rank
 - **Persistent Storage**: Scores saved locally in your browser
 
 ### 🚀 Technical Features
+
 - **No Dependencies**: Pure vanilla JavaScript
 - **Responsive Design**: Works on desktop and tablets
 - **Local Storage**: Game progress and scores persist between sessions
@@ -42,7 +47,7 @@ A fast, tactical card game where players play numbered cards onto face-card **St
 
 1. **Setup**: Each player gets one face card (J, Q, or K) to start a stack
 2. **Your Turn**: Draw a number card (A=1 through 10)
-3. **Play the Card**: 
+3. **Play the Card**:
    - Play on the **left** side to add to the stack sum
    - Play on the **right** side to subtract from the stack sum
    - Play as a **Match** on a full stack (card value equals stack sum)
@@ -70,12 +75,14 @@ For detailed rules, see [Player Rules](docs/PLAYER_RULES.md) or [Formal Rules](d
 ### Quick Start (Recommended)
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/Cireo/sixen.git
    cd sixen
    ```
 
 2. **Open in browser**
+
    ```bash
    # Simply open index.html in your web browser
    open index.html  # macOS
@@ -143,12 +150,14 @@ sixen/
 ## 🎨 Game Modes
 
 ### Multiplayer Mode
+
 - Play with 2-5 players
 - Turn-based gameplay
 - Competitive scoring
 - Real-time game state updates
 
 ### Solitaire Mode
+
 - Single-player experience
 - High score tracking
 - Challenge yourself to beat your best score
@@ -157,11 +166,12 @@ sixen/
 ## 🔧 Browser Compatibility
 
 - ✅ **Chrome** 60+
-- ✅ **Firefox** 55+  
+- ✅ **Firefox** 55+
 - ✅ **Safari** 11+
 - ✅ **Edge** 79+
 
 **Features used:**
+
 - ES6+ JavaScript (classes, arrow functions, destructuring)
 - CSS Grid & Flexbox
 - Local Storage API
@@ -195,6 +205,7 @@ We welcome contributions! Here's how you can help:
 5. **Open Pull Request**
 
 ### Development Guidelines
+
 - Maintain clean, commented code
 - Follow existing code style
 - Ensure accessibility compliance
@@ -214,5 +225,4 @@ This project is open source and available under the [MIT License](LICENSE).
 
 **Made with ❤️ for card game enthusiasts everywhere!**
 
-*Enjoy the tactical challenge of Sixen!* 🎴✨
-
+_Enjoy the tactical challenge of Sixen!_ 🎴✨

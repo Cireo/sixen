@@ -5,7 +5,7 @@ This Sixen card game is ready to be deployed to GitHub Pages as a single-page we
 ## Quick Setup
 
 1. **Push to GitHub**: Make sure your repository is on GitHub
-2. **Enable GitHub Pages**: 
+2. **Enable GitHub Pages**:
    - Go to your repository settings
    - Navigate to "Pages" in the left sidebar
    - Under "Source", select "GitHub Actions"
@@ -59,7 +59,7 @@ This Sixen card game is ready to be deployed to GitHub Pages as a single-page we
 ✅ **Responsive design** - Works on mobile and desktop  
 ✅ **Interactive tutorial** - All functionality preserved  
 ✅ **Multiplayer and solitaire modes** - Both game modes work offline  
-✅ **High score tracking** - Scores saved locally in browser  
+✅ **High score tracking** - Scores saved locally in browser
 
 ## Access Your Deployed App
 
@@ -89,4 +89,3 @@ To use it:
 2. **Push to main**: The workflow will automatically deploy your site
 
 The workflow is already configured and ready to use!
-

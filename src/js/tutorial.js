@@ -194,9 +194,7 @@ class TutorialGame {
 
     // Render drawn card if present
     if (state.drawnCard) {
-      const cardEl = window.Rendering.createCardElement(
-        state.drawnCard,
-      );
+      const cardEl = window.Rendering.createCardElement(state.drawnCard);
       this.drawnCardArea.appendChild(cardEl);
       this.drawnCardArea.classList.remove("hidden");
     } else {
@@ -292,9 +290,7 @@ class TutorialGame {
     // Face card
     const faceArea = document.createElement("div");
     faceArea.className = "stack-face";
-    faceArea.appendChild(
-      window.Rendering.createCardElement(stack.face),
-    );
+    faceArea.appendChild(window.Rendering.createCardElement(stack.face));
     stackEl.appendChild(faceArea);
 
     // Modifier rows
@@ -322,9 +318,7 @@ class TutorialGame {
 
       if (stack.left[i]) {
         leftSlot.classList.add("filled");
-        const cardEl = window.Rendering.createCardElement(
-          stack.left[i],
-        );
+        const cardEl = window.Rendering.createCardElement(stack.left[i]);
         leftSlot.appendChild(cardEl);
         leftSlot.style.zIndex = 10 + i;
       } else if (
@@ -348,9 +342,7 @@ class TutorialGame {
 
       if (stack.right[i]) {
         rightSlot.classList.add("filled");
-        const cardEl = window.Rendering.createCardElement(
-          stack.right[i],
-        );
+        const cardEl = window.Rendering.createCardElement(stack.right[i]);
         rightSlot.appendChild(cardEl);
         rightSlot.style.zIndex = 10 + i;
       } else if (
@@ -470,7 +462,7 @@ class TutorialGame {
         if (callback) callback(true);
       }, 800);
     }
-    
+
     return true; // Play was successful (async operations will complete later)
   }
 
@@ -582,14 +574,14 @@ class TutorialGame {
       return;
     }
 
-      // Execute the play with callback to continue after play completes
-      this.handlePlayCard(step.stackIndex, step.side, (success) => {
-        if (!success) {
-          // Play failed, stop auto-play
-          this.isAutoPlaying = false;
-          this.updatePlayButton();
-          return;
-        }
+    // Execute the play with callback to continue after play completes
+    this.handlePlayCard(step.stackIndex, step.side, (success) => {
+      if (!success) {
+        // Play failed, stop auto-play
+        this.isAutoPlaying = false;
+        this.updatePlayButton();
+        return;
+      }
 
       // Move to next step after play completes
       this.autoPlayIndex++;

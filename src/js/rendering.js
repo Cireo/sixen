@@ -88,7 +88,11 @@ function createCardElement(card, size = "normal") {
 
   const use = document.createElementNS(SVG_NAMESPACE, "use");
   const cardId = getCardId(card);
-  use.setAttributeNS(XLINK_NAMESPACE, "href", `src/assets/svg-cards.svg#${cardId}`);
+  use.setAttributeNS(
+    XLINK_NAMESPACE,
+    "href",
+    `src/assets/svg-cards.svg#${cardId}`,
+  );
   use.setAttribute("x", "0");
   use.setAttribute("y", "0");
 
@@ -151,4 +155,3 @@ if (typeof window !== "undefined") {
     PLAYER_COLORS,
   };
 }
-

@@ -41,9 +41,7 @@
               { "rank": "2", "suit": "diamonds" },
               { "rank": "3", "suit": "hearts" }
             ],
-            "faceDeck": [
-              { "rank": "K", "suit": "diamonds" }
-            ],
+            "faceDeck": [{ "rank": "K", "suit": "diamonds" }],
             "currentPlayerIndex": 0,
             "drawnCard": null,
             "stuckPlayer": null

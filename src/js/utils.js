@@ -79,4 +79,3 @@ if (typeof window !== "undefined") {
     getHorizontalOffset,
   };
 }
-

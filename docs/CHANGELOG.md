@@ -1,5 +1,18 @@
 # Changelog
 
+## Version 1.1.1 - December 2025
+
+### Fixed
+
+- Fixed game ending prematurely when collecting final stacks with cards remaining in number deck.
+- Fixed tutorial examples with incorrect sums.
+
+### Improved
+
+- Improved mobile experience with floating card display when scrolling.
+- Improved visibility of play slot indicators.
+- Improved game over screen with better score display and scrolling.
+
 ## Version 1.1 - December 2025
 
 ### Changed
@@ -20,4 +33,3 @@
 - End game conditions
 - Scoring system
 - Multiplayer and solitaire modes
-

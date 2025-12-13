@@ -112,6 +112,8 @@
         </div>
       </header>
       <button id="menu-btn" class="btn btn-small menu-btn-fixed">Menu</button>
+      <!-- Mobile drawn card (shown when header not visible) -->
+      <div id="mobile-drawn-card"></div>
 
       <!-- Main game area -->
       <main class="game-board">
@@ -143,6 +145,15 @@
       <div id="gameover-overlay" class="gameover-overlay hidden">
         <div class="gameover-container">
           <h1>Game Over</h1>
+          <p
+            id="game-over-reason"
+            style="
+              font-size: 1.2rem;
+              color: rgba(255, 255, 255, 0.7);
+              margin-top: 8px;
+              margin-bottom: 16px;
+            "
+          ></p>
           <div id="winner-announcement" class="winner-announcement">
             <h2 id="winner-name">Player 1 Wins!</h2>
           </div>

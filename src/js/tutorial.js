@@ -362,10 +362,11 @@ class TutorialGame {
 
     // Match slot
     // Don't show match slot if collection is pending (to match real game behavior)
+    // Add match row BEFORE appending modifiersArea to stackEl so it appears above left/right cards
     const hasPendingCollection = this.pendingCollections.has(stackIndex);
     if (
       !hasPendingCollection &&
-      (window.isStackFull(stack) ||
+      (stack.matchSlot !== null ||
         allowedStackPlays.some((p) => p.side === "match"))
     ) {
       const matchRow = document.createElement("div");
@@ -380,9 +381,12 @@ class TutorialGame {
         matchSlot.appendChild(
           window.Rendering.createCardElement(stack.matchSlot),
         );
+        // Match slot should appear above left/right cards (z-index higher than max capacity z-index)
+        matchSlot.style.zIndex = 200;
       } else if (allowedStackPlays.some((p) => p.side === "match")) {
         matchSlot.classList.add("clickable");
-        matchSlot.style.zIndex = 100;
+        // Clickable slots get highest z-index (higher than left/right clickable which is 100)
+        matchSlot.style.zIndex = 200;
         matchSlot.addEventListener("click", () =>
           this.handlePlayCard(stackIndex, "match"),
         );

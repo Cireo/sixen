@@ -76,7 +76,7 @@
                   { "rank": "3", "suit": "hearts" },
                   { "rank": "2", "suit": "clubs" }
                 ],
-                "right": [{ "rank": "1", "suit": "diamonds" }],
+                "right": [{ "rank": "A", "suit": "diamonds" }],
                 "matchSlot": null
               },
               {
@@ -84,7 +84,7 @@
                 "left": [
                   { "rank": "4", "suit": "hearts" },
                   { "rank": "2", "suit": "spades" },
-                  { "rank": "1", "suit": "clubs" }
+                  { "rank": "A", "suit": "clubs" }
                 ],
                 "right": [
                   { "rank": "3", "suit": "diamonds" },
@@ -225,7 +225,7 @@
             "stacks": [
               {
                 "face": { "rank": "K", "suit": "diamonds" },
-                "left": [{ "rank": "6", "suit": "clubs" }],
+                "left": [{ "rank": "8", "suit": "clubs" }],
                 "right": [{ "rank": "6", "suit": "hearts" }],
                 "matchSlot": null
               }
@@ -407,7 +407,7 @@
                 "right": [
                   { "rank": "3", "suit": "hearts" },
                   { "rank": "2", "suit": "spades" },
-                  { "rank": "1", "suit": "diamonds" }
+                  { "rank": "A", "suit": "diamonds" }
                 ],
                 "matchSlot": null
               }

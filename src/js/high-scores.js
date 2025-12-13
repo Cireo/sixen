@@ -5,7 +5,7 @@
 
 const HIGH_SCORE_KEY = "sixseven-highscores";
 const MAX_HIGH_SCORES = 20;
-const CURRENT_GAME_VERSION = "1.1";
+const CURRENT_GAME_VERSION = "1.1.1";
 
 /**
  * Get all high scores from localStorage
@@ -335,17 +335,12 @@ function getNearbyScores(allScores, newScoreTimestamp, isInTop20, newScoreObj) {
         }
       }
     } else {
-      // Show new score, ellipsis, lowest 3, ellipsis, top 3
-      if (newScoreObj) {
-        result.push({
-          score: newScoreObj,
-          isNewScore: true,
-          displayIndex: ">20",
-        });
-      }
+      // Show top 3, ellipsis, lowest 3, ellipsis, new score (>20)
+      // Add top 3 first
+      result.push(...top3);
 
-      // Add ellipsis if there are more than 0 scores
-      if (allScores.length > 0) {
+      // Add ellipsis between top 3 and lowest 3 if there's a gap
+      if (allScores.length > 6) {
         result.push({ isEllipsis: true });
       }
 
@@ -358,13 +353,19 @@ function getNearbyScores(allScores, newScoreTimestamp, isInTop20, newScoreObj) {
         })),
       );
 
-      // Add ellipsis between lowest 3 and top 3 if there's a gap
-      if (allScores.length > 6) {
+      // Add ellipsis before new score if there are scores
+      if (allScores.length > 0) {
         result.push({ isEllipsis: true });
       }
 
-      // Add top 3
-      result.push(...top3);
+      // Add new score last
+      if (newScoreObj) {
+        result.push({
+          score: newScoreObj,
+          isNewScore: true,
+          displayIndex: ">20",
+        });
+      }
     }
   }
 

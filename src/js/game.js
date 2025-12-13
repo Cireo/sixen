@@ -38,7 +38,13 @@ function createCard(rank, suit) {
  * Get the numeric value of a card
  */
 function getCardValue(card) {
-  return CARD_VALUES[card.rank] || 0;
+  const value = CARD_VALUES[card.rank];
+  if (value === undefined) {
+    throw new Error(
+      `Invalid card rank: "${card.rank}". Valid ranks are: A, 2-10, J, Q, K`,
+    );
+  }
+  return value;
 }
 
 /**
@@ -190,19 +196,51 @@ function hasLegalPlay(stack, card) {
 }
 
 /**
+ * Get all possible and legal plays for a card on a stack
+ * Returns object with left, right, and match properties, each with { possible: boolean, legal: boolean }
+ * @param {Object} stack - Stack object
+ * @param {Object} card - Card object
+ * @returns {Object} Object with left, right, match properties
+ */
+function getAllPlaysForStack(stack, card) {
+  const cardValue = getCardValue(card);
+  const currentSum = calculateStackSum(stack);
+  const capacity = getStackCapacity(stack);
+
+  // Left side
+  const leftPossible = !isLeftFull(stack);
+  const leftLegal = leftPossible && currentSum + cardValue >= 0;
+
+  // Right side
+  const rightPossible = !isRightFull(stack);
+  const rightLegal = rightPossible && currentSum - cardValue >= 0;
+
+  // Match slot
+  const matchPossible = isStackFull(stack);
+  const matchLegal = matchPossible && cardValue === currentSum;
+
+  return {
+    left: { possible: leftPossible, legal: leftLegal },
+    right: { possible: rightPossible, legal: rightLegal },
+    match: { possible: matchPossible, legal: matchLegal },
+  };
+}
+
+/**
  * Get all legal plays for a card across all stacks
  * Returns array of { stackIndex, side: 'left'|'right'|'match' }
  */
 function getLegalPlays(stacks, card) {
   const plays = [];
   stacks.forEach((stack, index) => {
-    if (canPlayLeft(stack, card)) {
+    const allPlays = getAllPlaysForStack(stack, card);
+    if (allPlays.left.legal) {
       plays.push({ stackIndex: index, side: "left" });
     }
-    if (canPlayRight(stack, card)) {
+    if (allPlays.right.legal) {
       plays.push({ stackIndex: index, side: "right" });
     }
-    if (canPlayMatch(stack, card)) {
+    if (allPlays.match.legal) {
       plays.push({ stackIndex: index, side: "match" });
     }
   });
@@ -579,3 +617,4 @@ window.isStackFull = isStackFull;
 window.getCardValue = getCardValue;
 window.createCard = createCard;
 window.createStack = createStack;
+window.getAllPlaysForStack = getAllPlaysForStack;

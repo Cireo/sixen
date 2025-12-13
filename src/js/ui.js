@@ -19,6 +19,8 @@ const drawnCardArea = document.getElementById("drawn-card-area");
 const drawnCardDisplay = document.getElementById("drawn-card-display");
 const stacksContainer = document.getElementById("stacks-container");
 const playersList = document.getElementById("players-list");
+const playersHeader = document.querySelector(".players-header");
+const mobileDrawnCard = document.getElementById("mobile-drawn-card");
 const numberDeckCount = document.getElementById("number-deck-count");
 const faceDeckCount = document.getElementById("face-deck-count");
 const announcementOverlay = document.getElementById("announcement-overlay");
@@ -48,6 +50,7 @@ let isLoadingScenario = false; // Flag to track if we're loading a scenario (ski
 let isProcessing = false; // Prevent drawing during animations/processing
 let noValidMovesTimer = null; // Timer for tracking when no valid moves
 let faceDeckShakeInterval = null; // Interval for shaking face deck
+let highScoreRecorded = false; // Track if high score has been recorded for this game
 
 // Import from rendering.js (access directly to avoid redeclaration errors)
 // Helper to access rendering functions without creating const conflicts
@@ -166,6 +169,43 @@ function initEventListeners() {
       handleFaceDeckClick();
     }
   });
+
+  // Update mobile card on scroll (throttled)
+  let scrollTimeout = null;
+  window.addEventListener(
+    "scroll",
+    () => {
+      if (scrollTimeout) return;
+      scrollTimeout = setTimeout(() => {
+        if (game && !gameScreen.classList.contains("hidden")) {
+          const state = game.getState();
+          updateMobileDrawnCard(state);
+        }
+        scrollTimeout = null;
+      }, 50); // Throttle to every 50ms
+    },
+    { passive: true },
+  );
+
+  // Update mobile card on resize (to handle mobile -> desktop switch)
+  let resizeTimeout = null;
+  window.addEventListener("resize", () => {
+    if (resizeTimeout) return;
+    resizeTimeout = setTimeout(() => {
+      // Always hide mobile card if not mobile, even if game isn't active
+      if (!mobileDrawnCard) return;
+      const isMobile = window.innerWidth <= 600;
+      if (!isMobile) {
+        mobileDrawnCard.classList.remove("visible");
+        mobileDrawnCard.innerHTML = "";
+      } else if (game && !gameScreen.classList.contains("hidden")) {
+        // Only update if mobile and game is active
+        const state = game.getState();
+        updateMobileDrawnCard(state);
+      }
+      resizeTimeout = null;
+    }, 100); // Throttle to every 100ms
+  });
 }
 
 /**
@@ -261,6 +301,7 @@ function returnToMenu() {
   previousStackCount = 0;
   shouldAnimateNewStack = false;
   isProcessing = false;
+  highScoreRecorded = false;
   clearNoValidMovesTimer();
   stopFaceDeckShaking();
   // Hide gameover overlay if visible
@@ -281,6 +322,57 @@ function showScreen(screen) {
 }
 
 /**
+ * Check if the game should end based on current state
+ * @param {Object} state - Game state object
+ * @returns {Object|null} Object with { shouldEnd: boolean, reason: string } or null if game should continue
+ */
+function shouldGameEnd(state) {
+  // 1. Game already marked as over
+  if (state.gameOver) {
+    return { shouldEnd: true, reason: "Game over" };
+  }
+
+  // 2. Last round over - turn returned to stuck player
+  const lastRoundOver =
+    state.stuckPlayer !== null &&
+    state.currentPlayerIndex === state.stuckPlayer;
+  if (lastRoundOver) {
+    return { shouldEnd: true, reason: "Last round finished" };
+  }
+
+  // 3. No possible plays - all stacks are full and unplayable (sum > 10)
+  // Only check if we have stacks and no face deck (can't create new stacks)
+  if (state.stacks.length > 0 && state.faceDeckCount === 0) {
+    const allStacksFull = state.stacks.every((stack) => {
+      return window.isStackFull(stack);
+    });
+    if (allStacksFull) {
+      const allStacksUnplayable = state.stacks.every((stack) => {
+        const sum = window.calculateStackSum(stack);
+        // If stack is full and sum > 10, no card can match it (max card value is 10)
+        return sum > 10;
+      });
+      if (allStacksUnplayable) {
+        return { shouldEnd: true, reason: "No more plays possible" };
+      }
+    }
+  }
+
+  // 4. No number cards left and no drawn card
+  const noNumberCards = state.numberDeckCount === 0 && !state.drawnCard;
+  if (noNumberCards) {
+    return { shouldEnd: true, reason: "No more cards" };
+  }
+
+  // 5. No stacks - if there are no stacks, no one can play
+  if (state.stacks.length === 0) {
+    return { shouldEnd: true, reason: "No stacks remaining" };
+  }
+
+  return null;
+}
+
+/**
  * Render the entire game state
  */
 function renderGame() {
@@ -295,37 +387,12 @@ function renderGame() {
   // Render stacks
   renderStacks(state);
 
-  // Game over checks
-  if (
-    state.gameOver ||
-    (state.stuckPlayer !== null &&
-      state.currentPlayerIndex === state.stuckPlayer) ||
-    (state.numberDeckCount === 0 && !state.drawnCard) ||
-    state.stacks.length === 0
-  ) {
-    game.gameOver = true;
-    showGameOver();
-    return;
-  }
-
-  // Check if there are no possible moves (all stacks full and >10, no face deck)
-  if (
-    state.stacks.length > 0 &&
-    state.faceDeckCount === 0 &&
-    !state.drawnCard
-  ) {
-    // We can't check all cards without drawing, but we can check if all stacks are unplayable
-    // (full and sum > 10, meaning no match is possible)
-    const allStacksUnplayable = state.stacks.every((stack) => {
-      const sum = window.calculateStackSum(stack);
-      const isFull = window.isStackFull(stack);
-      // If stack is full and sum > 10, no card can match it (max card value is 10)
-      return isFull && sum > 10;
-    });
-    if (allStacksUnplayable) {
-      // No possible moves - end game
+  // Check if game should end (only if not already marked as over to avoid double calls)
+  if (!state.gameOver) {
+    const endCheck = shouldGameEnd(state);
+    if (endCheck && endCheck.shouldEnd) {
       game.gameOver = true;
-      showGameOver();
+      showGameOver(endCheck.reason);
       return;
     }
   }
@@ -571,6 +638,7 @@ function renderPlayers(state) {
             <div class="player-deck-wrapper ${isCurrentPlayer ? "active" : ""}" data-player-index="${index}">
                 <div class="deck-display-wrapper clickable-deck player-deck" data-player-index="${index}">
                     <div class="deck-display player-deck-display" data-player-index="${index}">
+                        <!-- deck-stack will be added here dynamically -->
                         <div class="drawn-card-overlay player-drawn-card" data-player-index="${index}">
                             <div class="drawn-card-display"></div>
                         </div>
@@ -600,6 +668,9 @@ function renderPlayers(state) {
 
   // Update deck displays for current player
   updatePlayerDecks(state);
+
+  // Update mobile card visibility
+  updateMobileDrawnCard(state);
 }
 
 /**
@@ -692,6 +763,11 @@ function updatePlayerDecks(state) {
         const existingEmpty = deckDisplay.querySelector(".empty-deck");
         if (existingEmpty) existingEmpty.remove();
 
+        // Ensure drawn card is in deck-display (not inside deck-stack)
+        if (drawnCardOverlay && !deckDisplay.contains(drawnCardOverlay)) {
+          deckDisplay.appendChild(drawnCardOverlay);
+        }
+
         if (state.numberDeckCount > 0) {
           const cardStack = getRendering().createDeckStack(
             state.numberDeckCount,
@@ -719,6 +795,46 @@ function updatePlayerDecks(state) {
       }
     }
   });
+
+  // Update mobile card after updating decks
+  updateMobileDrawnCard(state);
+}
+
+/**
+ * Check if players header is visible in viewport
+ */
+function isPlayersHeaderVisible() {
+  if (!playersHeader) return true;
+  const rect = playersHeader.getBoundingClientRect();
+  return rect.bottom > 0;
+}
+
+/**
+ * Update mobile drawn card display
+ */
+function updateMobileDrawnCard(state) {
+  if (!mobileDrawnCard) return;
+
+  // Only show on mobile (check window width)
+  const isMobile = window.innerWidth <= 600;
+  if (!isMobile) {
+    mobileDrawnCard.classList.remove("visible");
+    return;
+  }
+
+  const isCurrentPlayer = state.currentPlayerIndex !== undefined;
+  const hasDrawnCard = state.drawnCard !== null;
+  const headerVisible = isPlayersHeaderVisible();
+
+  // Show mobile card if: current player has drawn card AND header is not visible
+  if (isCurrentPlayer && hasDrawnCard && !headerVisible) {
+    mobileDrawnCard.innerHTML = "";
+    const cardEl = getRendering().createCardElement(state.drawnCard);
+    mobileDrawnCard.appendChild(cardEl);
+    mobileDrawnCard.classList.add("visible");
+  } else {
+    mobileDrawnCard.classList.remove("visible");
+  }
 }
 
 /**
@@ -745,6 +861,60 @@ function renderStacks(state) {
 }
 
 /**
+ * Create a card slot element for a stack
+ * @param {Object} params - Parameters object
+ * @param {Array} params.cards - Array of cards for left/right/match
+ * @param {string} params.side - "left", "right", or "match"
+ * @param {number} params.index - Index in the capacity array (0 for match)
+ * @param {number} params.capacity - Stack capacity
+ * @param {Object|null} params.allPlays - All plays object from getAllPlaysForStack, or null
+ * @param {number} params.stackIndex - Stack index for click handler
+ * @returns {HTMLElement} Slot element
+ */
+function createCardSlot({
+  cards,
+  side,
+  index,
+  capacity,
+  allPlays,
+  stackIndex,
+}) {
+  const slot = document.createElement("div");
+  slot.className = `card-slot ${side}-slot`;
+
+  // Check if card exists at index, or if this is the next slot
+  const isFilled = cards && cards[index] !== undefined;
+  const isNextSlot = cards && index === cards.length;
+
+  if (isFilled) {
+    // Slot has a card
+    slot.classList.add("filled");
+    const card = cards[index];
+    const cardEl = getRendering().createCardElement(card);
+    slot.appendChild(cardEl);
+    // Z-index: match gets 200, left/right get 10 + index
+    slot.style.zIndex = side === "match" ? 200 : 10 + index;
+  } else if (isNextSlot && allPlays) {
+    // Empty slot that could be filled - check if we should show it
+    const playInfo = allPlays[side];
+    const shouldShow =
+      playInfo.legal || (!hideIllegalMoves && playInfo.possible);
+    if (shouldShow) {
+      slot.classList.add("clickable");
+      // Clickable slots get highest z-index (match gets 200, left/right get 100)
+      slot.style.zIndex = side === "match" ? 200 : 100;
+      slot.addEventListener("click", () => handlePlayCard(stackIndex, side));
+    }
+  }
+
+  // Apply horizontal offset (for capacity 1, offset is always 0, so match slots get 0 offset)
+  const offset = getUtils().getHorizontalOffset(index, capacity);
+  slot.style.transform = `translateX(${offset}px)`;
+
+  return slot;
+}
+
+/**
  * Internal function to render stacks
  */
 function renderStacksInternal(state) {
@@ -765,6 +935,11 @@ function renderStacksInternal(state) {
 
     const sum = calculateStackSum(stack);
     const isFull = isStackFull(stack);
+
+    // Get all plays (possible and legal) for this stack
+    const allPlays = state.drawnCard
+      ? getAllPlaysForStack(stack, state.drawnCard)
+      : null;
 
     // Check if this stack has any legal plays
     const stackPlays = legalPlays.filter((p) => p.stackIndex === stackIndex);
@@ -796,104 +971,57 @@ function renderStacksInternal(state) {
       row.className = "modifier-row";
 
       // Left slot
-      const leftSlot = document.createElement("div");
-      leftSlot.className = "card-slot left-slot";
-      const isNextLeftSlot = i === stack.left.length;
-
-      // Apply horizontal offset to ALL slots (filled, clickable, and empty)
-      const offset = getUtils().getHorizontalOffset(i, capacity);
-      leftSlot.style.transform = `translateX(${offset}px)`;
-
-      if (stack.left[i]) {
-        leftSlot.classList.add("filled");
-        const cardEl = getRendering().createCardElement(stack.left[i]);
-        leftSlot.appendChild(cardEl);
-        // Higher z-index for later cards (so they're on top)
-        leftSlot.style.zIndex = 10 + i;
-      } else if (isNextLeftSlot) {
-        // Check if this is a legal play or if we should show it anyway (when not hiding illegal moves)
-        const isLegalPlay = stackPlays.some((p) => p.side === "left");
-        const shouldShow =
-          isLegalPlay || (!hideIllegalMoves && state.drawnCard);
-        if (shouldShow) {
-          leftSlot.classList.add("clickable");
-          // Clickable slots get highest z-index
-          leftSlot.style.zIndex = 100;
-          leftSlot.addEventListener("click", () =>
-            handlePlayCard(stackIndex, "left"),
-          );
-        }
-      }
+      const leftSlot = createCardSlot({
+        cards: stack.left,
+        side: "left",
+        index: i,
+        capacity,
+        allPlays,
+        stackIndex,
+      });
       row.appendChild(leftSlot);
 
       // Right slot
-      const rightSlot = document.createElement("div");
-      rightSlot.className = "card-slot right-slot";
-      const isNextRightSlot = i === stack.right.length;
-
-      // Apply horizontal offset to ALL slots (filled, clickable, and empty)
-      const rightOffset = getUtils().getHorizontalOffset(i, capacity);
-      rightSlot.style.transform = `translateX(${rightOffset}px)`;
-
-      if (stack.right[i]) {
-        rightSlot.classList.add("filled");
-        const cardEl = getRendering().createCardElement(stack.right[i]);
-        rightSlot.appendChild(cardEl);
-        // Higher z-index for later cards (so they're on top)
-        rightSlot.style.zIndex = 10 + i;
-      } else if (isNextRightSlot) {
-        // Check if this is a legal play or if we should show it anyway (when not hiding illegal moves)
-        const isLegalPlay = stackPlays.some((p) => p.side === "right");
-        const shouldShow =
-          isLegalPlay || (!hideIllegalMoves && state.drawnCard);
-        if (shouldShow) {
-          rightSlot.classList.add("clickable");
-          // Clickable slots get highest z-index
-          rightSlot.style.zIndex = 100;
-          rightSlot.addEventListener("click", () =>
-            handlePlayCard(stackIndex, "right"),
-          );
-        }
-      }
+      const rightSlot = createCardSlot({
+        cards: stack.right,
+        side: "right",
+        index: i,
+        capacity,
+        allPlays,
+        stackIndex,
+      });
       row.appendChild(rightSlot);
 
       modifiersArea.appendChild(row);
     }
 
-    stackEl.appendChild(modifiersArea);
+    // Match slot (only show if match slot is filled or has match play available, or if showing illegal moves)
+    // Add match row BEFORE appending modifiersArea to stackEl so it appears above left/right cards
+    const shouldShowMatchRow =
+      stack.matchSlot !== null ||
+      (allPlays &&
+        (allPlays.match.legal ||
+          (!hideIllegalMoves && allPlays.match.possible)));
 
-    // Match slot (only show if stack is full or has match play available)
-    if (isStackFull(stack) || stackPlays.some((p) => p.side === "match")) {
+    if (shouldShowMatchRow) {
       const matchRow = document.createElement("div");
       matchRow.className = "modifier-row";
       matchRow.style.justifyContent = "center";
 
-      const matchSlot = document.createElement("div");
-      matchSlot.className = "card-slot match-slot";
-
-      if (stack.matchSlot) {
-        matchSlot.classList.add("filled");
-        matchSlot.appendChild(
-          getRendering().createCardElement(stack.matchSlot),
-        );
-      } else {
-        // Check if this is a legal match play or if we should show it anyway (when not hiding illegal moves)
-        const isLegalMatch = stackPlays.some((p) => p.side === "match");
-        const shouldShowMatch =
-          isLegalMatch || (!hideIllegalMoves && isFull && state.drawnCard);
-        if (shouldShowMatch) {
-          matchSlot.classList.add("clickable");
-          // Clickable slots get highest z-index
-          matchSlot.style.zIndex = 100;
-          matchSlot.addEventListener("click", () =>
-            handlePlayCard(stackIndex, "match"),
-          );
-        }
-      }
+      const matchSlot = createCardSlot({
+        cards: stack.matchSlot ? [stack.matchSlot] : [],
+        side: "match",
+        index: 0,
+        capacity: 1, // Match slot uses capacity 1 (no horizontal offset)
+        allPlays,
+        stackIndex,
+      });
 
       matchRow.appendChild(matchSlot);
       modifiersArea.appendChild(matchRow);
     }
+
+    stackEl.appendChild(modifiersArea);
 
     // Stack sum (only show if setting is enabled)
     if (showStackSum) {
@@ -1021,7 +1149,7 @@ function handleDrawCard() {
   if (!card) {
     // Number deck ran out - end game
     game.gameOver = true;
-    renderGame();
+    showGameOver("No more cards");
     return;
   }
 
@@ -1086,7 +1214,7 @@ function handleDrawCard() {
         // Game over - wait 1.5s to show the card, then end game
         setTimeout(() => {
           game.gameOver = true;
-          renderGame();
+          showGameOver("Last round finished");
         }, 1500);
       } else {
         // Player is stuck, show message and advance turn
@@ -1234,12 +1362,10 @@ function handlePlayCard(stackIndex, side) {
             clearNoValidMovesTimer();
             stopFaceDeckShaking();
 
-            // Check if game should end (no stacks and no face cards)
-            if (newStackCount === 0 && newState.faceDeckCount === 0) {
-              game.gameOver = true;
-              showGameOver();
-              return;
-            }
+            // Check if game should end using helper function
+            // Don't check during transition - let renderGame handle it after nextTurn
+            // Just mark as over if needed, but don't call showGameOver here
+            // (renderGame will be called after nextTurn and will handle it)
 
             game.nextTurn();
             renderGame();
@@ -1393,14 +1519,17 @@ function showHighScores() {
 
 /**
  * Show game over overlay
+ * @param {string} reason - Reason why the game ended (e.g., "No more cards", "Last round finished")
  */
-function showGameOver() {
+function showGameOver(reason = "Game over") {
   const scores = game.getFinalScores();
   const winner = scores[0];
   const isSolitaire = scores.length === 1;
 
-  if (isSolitaire && !isLoadingScenario) {
+  if (isSolitaire && !isLoadingScenario && !highScoreRecorded) {
     // Solitaire mode: show high score message and nearby scores (skip if loading scenario)
+    // Only record high score once per game
+    highScoreRecorded = true;
     const result = getHighScoresModule().addHighScore(
       winner.name,
       winner.faceCards,
@@ -1419,6 +1548,11 @@ function showGameOver() {
     }
 
     winnerName.textContent = message;
+    // Show reason for game ending
+    const reasonEl = document.getElementById("game-over-reason");
+    if (reasonEl) {
+      reasonEl.textContent = reason;
+    }
 
     // Display nearby scores
     const allScores = getHighScoresModule().getHighScores();
@@ -1430,6 +1564,7 @@ function showGameOver() {
     );
 
     finalScores.innerHTML = "";
+    let newScoreElement = null;
     nearbyScores.forEach((item) => {
       if (item.isEllipsis) {
         // Add ellipsis
@@ -1443,6 +1578,7 @@ function showGameOver() {
         entry.className = "score-entry";
         if (item.isNewScore) {
           entry.classList.add("new-score");
+          newScoreElement = entry; // Track the new score element
         }
 
         // Format date
@@ -1466,13 +1602,33 @@ function showGameOver() {
         finalScores.appendChild(entry);
       }
     });
+
+    // Scroll to new score if it exists
+    if (newScoreElement) {
+      // Use setTimeout to ensure DOM is fully rendered
+      setTimeout(() => {
+        newScoreElement.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }, 100);
+    }
   } else if (isSolitaire && isLoadingScenario) {
     // Solitaire mode but loading scenario - just show simple message, no high scores
     winnerName.textContent = "Good Game!";
+    const reasonEl = document.getElementById("game-over-reason");
+    if (reasonEl) {
+      reasonEl.textContent = reason;
+    }
     finalScores.innerHTML = ""; // Clear scores display
   } else {
     // Multi-player mode: show winner and final standings (no high scores)
     winnerName.textContent = `${winner.name} Wins!`;
+    // Show reason for game ending
+    const reasonEl = document.getElementById("game-over-reason");
+    if (reasonEl) {
+      reasonEl.textContent = reason;
+    }
 
     finalScores.innerHTML = "";
     scores.forEach((player, index) => {

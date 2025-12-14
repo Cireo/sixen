@@ -4,7 +4,8 @@
 
 ### Fixed
 
-- Fixed game ending prematurely when collecting final stacks with cards remaining in number deck.
+- Fixed end-of-game inconsistencies when collecting the final stack.
+  - This also ensures perfect games are recorded correctly in solitaire.
 - Fixed tutorial examples with incorrect sums.
 
 ### Improved

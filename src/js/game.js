@@ -478,14 +478,6 @@ class SixSevenGame {
     const newStack = playCard(stack, playedCard, side);
     this.stacks[stackIndex] = newStack;
     this.drawnCard = null;
-    // Only reset stuckPlayer if the current player (who made the play) was the stuck player
-    // This allows the game to continue if someone else makes a play, but ends when turn returns to stuck player
-    if (this.stuckPlayer === this.currentPlayerIndex) {
-      this.stuckPlayer = null; // Stuck player made a valid play, game continues
-      // Clear the stuck card since they played
-      const player = this.getCurrentPlayer();
-      player.stuckCard = null;
-    }
 
     // Check collection conditions
     const conditions = checkCollectionConditions(newStack, playedCard, side);

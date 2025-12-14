@@ -15,8 +15,6 @@ const removePlayerBtn = document.getElementById("remove-player-btn");
 const startGameBtn = document.getElementById("start-game-btn");
 const menuBtn = document.getElementById("menu-btn");
 const numberDeckWrapper = document.getElementById("number-deck-wrapper");
-const drawnCardArea = document.getElementById("drawn-card-area");
-const drawnCardDisplay = document.getElementById("drawn-card-display");
 const stacksContainer = document.getElementById("stacks-container");
 const playersList = document.getElementById("players-list");
 const playersHeader = document.querySelector(".players-header");
@@ -51,6 +49,7 @@ let isProcessing = false; // Prevent drawing during animations/processing
 let noValidMovesTimer = null; // Timer for tracking when no valid moves
 let faceDeckShakeInterval = null; // Interval for shaking face deck
 let highScoreRecorded = false; // Track if high score has been recorded for this game
+let gameOverShown = false; // Track if game over screen has been shown
 
 // Import from rendering.js (access directly to avoid redeclaration errors)
 // Helper to access rendering functions without creating const conflicts
@@ -218,7 +217,7 @@ function addPlayer() {
   const row = document.createElement("div");
   row.className = "player-input-row";
   row.innerHTML = `
-        <label>Player ${playerCount}:</label>
+        <label for="player-${playerCount}">Player ${playerCount}:</label>
         <input type="text" id="player-${playerCount}" placeholder="Enter name" value="Player ${playerCount}">
     `;
   playerInputs.appendChild(row);
@@ -302,6 +301,7 @@ function returnToMenu() {
   shouldAnimateNewStack = false;
   isProcessing = false;
   highScoreRecorded = false;
+  gameOverShown = false;
   clearNoValidMovesTimer();
   stopFaceDeckShaking();
   // Hide gameover overlay if visible
@@ -359,7 +359,9 @@ function shouldGameEnd(state) {
   }
 
   // 4. No number cards left and no drawn card
-  const noNumberCards = state.numberDeckCount === 0 && !state.drawnCard;
+  // Only end if there's no pending collection (we need to wait for collection to complete)
+  const noNumberCards =
+    state.numberDeckCount === 0 && !state.drawnCard && !pendingCollection;
   if (noNumberCards) {
     return { shouldEnd: true, reason: "No more cards" };
   }
@@ -668,9 +670,6 @@ function renderPlayers(state) {
 
   // Update deck displays for current player
   updatePlayerDecks(state);
-
-  // Update mobile card visibility
-  updateMobileDrawnCard(state);
 }
 
 /**
@@ -801,12 +800,30 @@ function updatePlayerDecks(state) {
 }
 
 /**
- * Check if players header is visible in viewport
+ * Check if the drawn card in the player header is visible in viewport
+ * Returns true if at least the card number is visible
  */
-function isPlayersHeaderVisible() {
+function isDrawnCardVisible() {
   if (!playersHeader) return true;
-  const rect = playersHeader.getBoundingClientRect();
-  return rect.bottom > 0;
+
+  // Find the current player's drawn card element
+  const currentPlayerEntry = playersHeader.querySelector(
+    ".player-entry.current-player",
+  );
+  if (!currentPlayerEntry) return true;
+
+  const drawnCardOverlay =
+    currentPlayerEntry.querySelector(".player-drawn-card");
+  if (!drawnCardOverlay || drawnCardOverlay.classList.contains("hidden")) {
+    return false;
+  }
+
+  // Check if the card (or at least the number area) is visible
+  const rect = drawnCardOverlay.getBoundingClientRect();
+  // Card is visible if the top of the card is above the bottom of the viewport
+  // We want to show the side card if the card number area (roughly top 60% of card) is not visible
+  const cardNumberAreaBottom = rect.top + rect.height * 0.6;
+  return cardNumberAreaBottom > 0;
 }
 
 /**
@@ -824,10 +841,10 @@ function updateMobileDrawnCard(state) {
 
   const isCurrentPlayer = state.currentPlayerIndex !== undefined;
   const hasDrawnCard = state.drawnCard !== null;
-  const headerVisible = isPlayersHeaderVisible();
+  const cardVisible = isDrawnCardVisible();
 
-  // Show mobile card if: current player has drawn card AND header is not visible
-  if (isCurrentPlayer && hasDrawnCard && !headerVisible) {
+  // Show mobile card if: current player has drawn card AND card number is not visible
+  if (isCurrentPlayer && hasDrawnCard && !cardVisible) {
     mobileDrawnCard.innerHTML = "";
     const cardEl = getRendering().createCardElement(state.drawnCard);
     mobileDrawnCard.appendChild(cardEl);
@@ -842,20 +859,16 @@ function updateMobileDrawnCard(state) {
  */
 function renderStacks(state) {
   const currentStackCount = state.stacks.length;
-  const stacksChanged = currentStackCount !== previousStackCount;
 
-  // If stacks changed, animate the transition
-  if (stacksChanged && previousStackCount > 0) {
-    // Animate existing stacks out if count decreased (stack was collected)
-    if (currentStackCount < previousStackCount) {
-      // The collection animation already handles this, so just update
-      previousStackCount = currentStackCount;
-      renderStacksInternal(state);
-      return;
-    }
+  // If stack count decreased (collection happened), collection animation already handles it
+  if (currentStackCount < previousStackCount) {
+    shouldAnimateNewStack = false;
   }
 
-  renderStacksInternal(state);
+  // Determine if we should animate a new stack
+  const animateNewStack =
+    currentStackCount > previousStackCount || shouldAnimateNewStack;
+  renderStacksInternal(state, animateNewStack);
   previousStackCount = currentStackCount;
   shouldAnimateNewStack = false; // Reset after rendering
 }
@@ -916,14 +929,15 @@ function createCardSlot({
 
 /**
  * Internal function to render stacks
+ * @param {Object} state - Game state
+ * @param {boolean} animateNewStack - Whether to animate a new stack being added
  */
-function renderStacksInternal(state) {
+function renderStacksInternal(state, animateNewStack) {
   stacksContainer.innerHTML = "";
 
   const legalPlays = state.drawnCard ? game.getLegalPlaysForDrawnCard() : [];
   const currentStackCount = state.stacks.length;
-  const wasAdding =
-    currentStackCount > previousStackCount || shouldAnimateNewStack;
+  const wasAdding = animateNewStack;
 
   state.stacks.forEach((stack, stackIndex) => {
     const stackEl = document.createElement("div");
@@ -1257,6 +1271,15 @@ function handleDrawCard() {
  * Handle playing a card
  */
 function handlePlayCard(stackIndex, side) {
+  // Check if game should end before allowing play (e.g., turn returned to stuck player)
+  const state = game.getState();
+  const endCheck = shouldGameEnd(state);
+  if (endCheck && endCheck.shouldEnd) {
+    game.gameOver = true;
+    showGameOver(endCheck.reason);
+    return;
+  }
+
   // Check if this is an illegal sum move before executing (if not hiding illegal moves)
   if (!hideIllegalMoves) {
     const state = game.getState();
@@ -1312,30 +1335,24 @@ function handlePlayCard(stackIndex, side) {
     return;
   }
 
-  // Clear drawn card immediately
-  const drawnCardOverlay = document.getElementById("drawn-card-area");
-  if (drawnCardOverlay) {
-    drawnCardOverlay.classList.add("hidden");
-    const display = drawnCardOverlay.querySelector("#drawn-card-display");
-    if (display) {
-      display.innerHTML = "";
-    }
-  }
-
-  // Render the card on the stack first so user can see it before collection
-  renderGame();
-
+  // Set pendingCollection before renderGame() so shouldGameEnd() can check it
+  let condition = null;
   if (result.collectionConditions.length > 0) {
     // Player can collect - prioritize six-seven over other conditions
-    let condition = result.collectionConditions.find(
-      (c) => c.type === "six-seven",
-    );
+    condition = result.collectionConditions.find((c) => c.type === "six-seven");
     if (!condition) {
       condition = result.collectionConditions[0]; // Use first condition if no six-seven
     }
     pendingCollection = { stackIndex, type: condition.type };
     isProcessing = true; // Lock drawing during animation
+  }
 
+  // Drawn card will be cleared when renderGame() is called (via updatePlayerDecks)
+
+  // Render the card on the stack first so user can see it before collection
+  renderGame();
+
+  if (result.collectionConditions.length > 0) {
     // Wait longer for the card to be visible on the stack, then show announcement
     setTimeout(() => {
       showAnnouncement(condition.announcement, null, null);
@@ -1349,10 +1366,12 @@ function handlePlayCard(stackIndex, side) {
             announcementOverlay.classList.add("hidden");
             announcementOverlay.classList.remove("fade-out");
             const oldStackCount = game.getState().stacks.length;
+
             game.collectStack(
               pendingCollection.stackIndex,
               pendingCollection.type,
             );
+
             const newState = game.getState();
             const newStackCount = newState.stacks.length;
             // If a new stack was created (one removed, one added), animate it
@@ -1362,12 +1381,20 @@ function handlePlayCard(stackIndex, side) {
             clearNoValidMovesTimer();
             stopFaceDeckShaking();
 
-            // Check if game should end using helper function
-            // Don't check during transition - let renderGame handle it after nextTurn
-            // Just mark as over if needed, but don't call showGameOver here
-            // (renderGame will be called after nextTurn and will handle it)
+            // Check if game should end after collection
+            const stateAfterCollection = game.getState();
+            const endCheck = shouldGameEnd(stateAfterCollection);
 
             game.nextTurn();
+
+            // If game should end, show it now
+            // The stack is already collected synchronously in collectStack(), so getFinalScores() will include it
+            if (endCheck && endCheck.shouldEnd) {
+              game.gameOver = true;
+              showGameOver(endCheck.reason);
+              return;
+            }
+
             renderGame();
           }, 300); // Match fade-out animation duration
         });
@@ -1522,6 +1549,12 @@ function showHighScores() {
  * @param {string} reason - Reason why the game ended (e.g., "No more cards", "Last round finished")
  */
 function showGameOver(reason = "Game over") {
+  // Prevent multiple calls to showGameOver
+  if (gameOverShown) {
+    return;
+  }
+  gameOverShown = true;
+
   const scores = game.getFinalScores();
   const winner = scores[0];
   const isSolitaire = scores.length === 1;
